@@ -56,12 +56,12 @@ Then, you can modify the .sof corresponding to p2vm computation (add modified
 gravi_align p2vm
 ```
 
-And finally, clean all the fits file in --datadir except the calibration files.
+And finally, remove all the fits file in --datadir except the calibration files.
 The diagnostic table is printed to check if all mandatory calibration files are present.
 
 ```bash
 gravi_align clean
 ```
 
-> Note: Be highly careful with this feature; the shift computation and the
+> Note: Be highly careful with this feature; the shifts computation and the
 > associated `*_wave.fits` modification need to be executed before.
