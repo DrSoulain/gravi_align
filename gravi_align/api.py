@@ -18,7 +18,14 @@ from termcolor import cprint
 
 
 def find_wave(args):
-    calib_wave_file = glob("%s/*_wave.fits" % (args.datadir))[0]
+    if not os.path.exists(args.datadir):
+        raise IOError("Datadir %s/ not found, check --datadir argument." % args.datadir)
+    
+    try:
+        calib_wave_file = glob("%s/*_wave.fits" % (args.datadir))[0]
+    except IndexError:
+        raise IndexError("*_wave.fits not found in %s/." % args.datadir)
+
     l_backup = glob("%s/*_wave_backup.fits" % (args.datadir))
     if len(l_backup) == 1:
         cprint(
