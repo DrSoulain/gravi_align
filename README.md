@@ -65,3 +65,8 @@ gravi_align clean
 
 > Note: Be highly careful with this feature; the shifts computation and the
 > associated `*_wave.fits` modification need to be executed before.
+
+The calibrated `*_wave.fits` and the new associated p2vm calibration file
+(`*_p2vm.fits`) are
+now computed. You can now run `run_gravi_reduced.py` to finally extract your
+data including the new spectral calibration.
