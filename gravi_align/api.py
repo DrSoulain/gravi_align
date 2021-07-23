@@ -33,6 +33,12 @@ def find_wave(args):
 
 def load_data(args):
     l_file = glob("%s/*aligned.fits" % args.datadir)
+    if len(l_file) == 0:
+        raise IOError(
+            "No spectra files detected in %s, check --datadir. Did you use run_gravi_reduce.py first?"
+            % args.datadir
+        )
+
     if not args.default:
         print("\n  SOURCE  |  DATE-OBS  |  index  ")
         print("-----------------------------------")
