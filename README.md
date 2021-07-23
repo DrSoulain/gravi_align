@@ -7,8 +7,6 @@ data.
 
 ## Installation
 
-----
-
 It is recommended to create a separate environment with `conda create -n
 <env_name> python=3.7`.
 Then, within your Conda env (`conda activate <env_name>`):
@@ -19,8 +17,6 @@ python -m pip install git+https://github.com/DrSoulain/gravi_align
 ```
 
 ## How to use it?
-
-----
 
 You are supposed to be on top repo where --datadir (default: reduced/)
 repository is located. This calibration step supposed that you used
