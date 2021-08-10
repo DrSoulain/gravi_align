@@ -51,10 +51,13 @@ def main(argv: Optional[List[str]] = None) -> int:
         help="Apply the save shift/offset (save_shift.fits) to check the alignment",
     )
     check_parser.add_argument(
-        "-wl",
+        "--wl",
+        nargs="+",
         default=[2.184, 0.003],
+        type=float,
         help="Range of wavelengths to plot the normalized spectra.",
     )
+
     check_parser.add_argument(
         "--datadir",
         default="reduced/",
@@ -89,6 +92,9 @@ def main(argv: Optional[List[str]] = None) -> int:
     )
 
     args = parser.parse_args(argv)
+    
+    # value = check_parser.parse_args()
+    # print(value)
 
     if args.command == "run":
         perform_align_gravity(args)
