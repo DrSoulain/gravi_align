@@ -132,7 +132,11 @@ def perform_align_gravity(args):
     if args.save:
         plt.savefig("fig_gravi_align/corr_map_%s_%s.png" % (sel_ref, obs_ref))
 
-    computed_shift = pixel_lambda * new_shift[3]
+    i_fit = 0
+    if args.poly:
+        i_fit = 3
+    
+    computed_shift = pixel_lambda * new_shift[i_fit]
     t3 = time.time()
     print("[3] Compute shifts between spectrum (%2.2f s)" % (t3 - t2))
 

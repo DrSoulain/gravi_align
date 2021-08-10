@@ -23,10 +23,13 @@ def main(argv: Optional[List[str]] = None) -> int:
         help="Use the backup if any and recompute the shift (should not be used first).",
     )
     run_parser.add_argument(
-        "-s", "--save", action="store_true", help="Save the figures in fig/"
+        "-s", "--save", action="store_true", help="Save figures as pdf."
     )
     run_parser.add_argument(
-        "-p", "--plot", action="store_true", help="Show the figures"
+        "--poly", action="store_true", help="Use the polynomial fit as shifts."
+    )
+    run_parser.add_argument(
+        "-p", "--plot", action="store_true", help="Show the figures (if any display available)."
     )
     run_parser.add_argument(
         "-d",
