@@ -34,6 +34,9 @@ run -h` for details.
 gravi_align run
 ```
 
+> Note: By default, the shifts are computed using the telluric doublet around
+> 2.18 µm. If you want to use a broader range of wavelength, add the option --full.
+
 Once good and satisfied by the alignment, you can overwrite the `*_wave.fits` with:
 
 ```bash
