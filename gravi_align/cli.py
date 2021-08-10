@@ -29,7 +29,20 @@ def main(argv: Optional[List[str]] = None) -> int:
         "--poly", action="store_true", help="Use the polynomial fit as shifts."
     )
     run_parser.add_argument(
-        "-p", "--plot", action="store_true", help="Show the figures (if any display available)."
+        "--full",
+        action="store_true",
+        help="Compute the correlation map using large wavelength range (2.1-2.2). "
+        + "Otherwise, correlation is performed on the telluric doublet around 2.18 microns.",
+    )
+    run_parser.add_argument(
+        "--smooth", default=1, type=int, help="Kernel size to smooth the signal."
+    )
+
+    run_parser.add_argument(
+        "-p",
+        "--plot",
+        action="store_true",
+        help="Show the figures (if any display available).",
     )
     run_parser.add_argument(
         "-d",
@@ -95,7 +108,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     )
 
     args = parser.parse_args(argv)
-    
+
     # value = check_parser.parse_args()
     # print(value)
 

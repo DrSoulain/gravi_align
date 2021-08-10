@@ -110,18 +110,29 @@ def perform_align_gravity(args):
     # Size of the box to compute the running median and normalize the spectra
     n_spec = spectra_align.shape[0]
 
+    corr_lim = [2.18, 2.19]
+    if args.full:
+        corr_lim = [2.1, 2.2]
+    
     # Compute the cross-correlation function as 2D array
-    corr_map = compute_corr_map(spectra_align, wl_align)
+    corr_map = compute_corr_map(spectra_align, wl_align, corr_lim=corr_lim,
+                                smooth=args.smooth)
     t2 = time.time()
     print("[2] Compute correlation map (%2.2f s)" % (t2 - t1))
 
     # Compute the shift using gaussian model and fit 2nd order polynom
     # to the results
     shift = compute_shift(corr_map)
+    
+    i_fit = 0
+    if args.poly:
+        i_fit = 3
+        
     pixel_lambda = np.diff(wl_align).mean()
-    master_ref = compute_master_ref(spectra_align, wl_align, shift[0])
+    master_ref = compute_master_ref(spectra_align, wl_align, shift[i_fit])
     # Compute the cross-correlation function as 2D array
-    corr_map = compute_corr_map(spectra_align, wl_align, master_ref=master_ref)
+    corr_map = compute_corr_map(spectra_align, wl_align, master_ref=master_ref, corr_lim=corr_lim,
+                                smooth=args.smooth)
     new_shift = compute_shift(corr_map)
 
     if args.save:
@@ -132,11 +143,8 @@ def perform_align_gravity(args):
     if args.save:
         plt.savefig("fig_gravi_align/corr_map_%s_%s.png" % (sel_ref, obs_ref))
 
-    i_fit = 0
-    if args.poly:
-        i_fit = 3
-    
-    computed_shift = pixel_lambda * new_shift[i_fit]
+    computed_shift = pixel_lambda * new_shift[i_fit]  # new_shift[i_fit]
+
     t3 = time.time()
     print("[3] Compute shifts between spectrum (%2.2f s)" % (t3 - t2))
 
@@ -168,13 +176,27 @@ def perform_align_gravity(args):
     plot_raw_spectra(
         spectra,
         wave,
+        shift=None,
+        tellu_offset=0,
+        wl_lim=wl_lim,
+        title='Raw spectra - %s %s' % (sel_ref, obs_ref)
+    )
+    if args.save:
+        plt.savefig("fig_gravi_align/raw_spectra_%s_%s.png" % (sel_ref, obs_ref),
+                    dpi=300)
+        
+    plot_raw_spectra(
+        spectra,
+        wave,
         shift=computed_shift,
         tellu_offset=computed_offset,
         wl_lim=wl_lim,
+        title='Aligned spectra - %s %s' % (sel_ref, obs_ref)
     )
     if args.save:
-        plt.savefig("fig_gravi_align/aligned_spectra_%s_%s.png" % (sel_ref, obs_ref))
-
+        plt.savefig("fig_gravi_align/aligned_spectra_%s_%s.png" % (sel_ref, obs_ref), 
+                    dpi=300)
+        
     print(
         " -------- Spectral alignment done (%2.2f s) -------- \n"
         % (time.time() - start_time)
@@ -192,7 +214,7 @@ def check_align_gravity(args):
     if args.save:
         if not os.path.exists("fig_gravi_align/"):
             os.mkdir("fig_gravi_align")
-            
+
     try:
         computed_shift, computed_offset = fits.open("save_shift.fits")[0].data
         computed_offset = computed_offset[0]
@@ -218,7 +240,7 @@ def check_align_gravity(args):
         title=title,
     )
     if args.save:
-        plt.savefig('fig_gravi_align/check_spectra_%s_%s.pdf' % (sel_ref, obs_ref))
+        plt.savefig("fig_gravi_align/check_spectra_%s_%s.pdf" % (sel_ref, obs_ref))
     plt.show()
 
     return 0

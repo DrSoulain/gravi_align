@@ -10,6 +10,7 @@ from matplotlib import pyplot as plt
 from scipy.ndimage import shift
 from scipy.signal import correlate
 from termcolor import cprint
+from tsmoothie.smoother import ConvolutionSmoother
 
 file_tellu = pkg_resources.resource_stream(
     "gravi_align", "internal_data/Telluric_lines.txt"
@@ -133,9 +134,10 @@ def compute_corr_map(
     n_box=50,
     mean=True,
     master_ref=None,
-    brg=[2.165, 2.168],
-    corr_lim=[2.13, 2.2],
+    brg=[2.1623, 2.17],
+    corr_lim=[2.18, 2.19],
     div=False,
+    smooth=1,
 ):
     """ Compute the 2D correlation map of several spectra
     using the spectrum number `ref_index` as reference.
@@ -186,6 +188,10 @@ def compute_corr_map(
     if master_ref is not None:
         ref_spectrum = master_ref
 
+    smoother0 = ConvolutionSmoother(window_len=smooth, window_type="ones")
+    smoother0.smooth(ref_spectrum)
+    ref_spectrum = smoother0.smooth_data[0]
+
     n_spec = l_spec.shape[0]
     cond_BrG = (boxed_wave >= brg[0]) & (boxed_wave <= brg[1])
     cond_range = (boxed_wave >= corr_lim[0]) & (boxed_wave <= corr_lim[1])
@@ -195,12 +201,18 @@ def compute_corr_map(
     size_spectr_norm = ref_spectrum_sel.shape[0]
     n_corr = (size_spectr_norm * 2) - 1
 
+    l_spec_sub = []
     corr_map = np.zeros([n_spec, n_corr])
     for i in range(n_spec):
         inp_spectre = l_spec[i]
         spec_to_compare = _substract_run_med(inp_spectre, n_box=n_box)[0]
+        smoother1 = ConvolutionSmoother(window_len=smooth, window_type="ones")
+        smoother1.smooth(spec_to_compare)
+        spec_to_compare = smoother1.smooth_data[0]
         corr_tmp = correlate(ref_spectrum_sel, spec_to_compare[cond_sel])
         corr_map[i] = corr_tmp
+        l_spec_sub.append(spec_to_compare[cond_sel])
+
     return corr_map
 
 
