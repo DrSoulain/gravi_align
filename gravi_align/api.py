@@ -20,7 +20,7 @@ from termcolor import cprint
 def find_wave(args):
     if not os.path.exists(args.datadir):
         raise IOError("Datadir %s/ not found, check --datadir argument." % args.datadir)
-    
+
     try:
         calib_wave_file = glob("%s/*_wave.fits" % (args.datadir))[0]
     except IndexError:
@@ -240,13 +240,18 @@ def compute_p2vm(args):
     file_p2vm_sof = _find_p2vm_sof(list_sof)
     p2vm_sof = np.loadtxt(file_p2vm_sof, dtype=str)
 
+    log_file_name = file_p2vm_sof.split(".sof")[0].split("/")[1]
+    sof_file_name = "new_p2vm_%s.sof" % log_file_name
     if _check_p2vm_modified(p2vm_sof):
         return 0
     else:
         new_line = np.array([calib_wave_file, "WAVE"], dtype=str)
         new_p2vm = np.array(np.vstack([p2vm_sof, new_line]), dtype=str)
-        np.savetxt("new_p2vm.sof", new_p2vm, fmt="%s")
-        os.system("esorex gravity_p2vm new_p2vm.sof")
+        np.savetxt(sof_file_name, new_p2vm, fmt="%s")
+        os.system(
+            "esorex --log-file=new_p2vm_%s.log --output-dir=%s gravity_p2vm %s"
+            % (log_file_name, args.datadir, sof_file_name)
+        )
 
     return 0
 
