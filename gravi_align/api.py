@@ -239,6 +239,9 @@ def check_align_gravity(args):
         wl_lim=args.wl,
         title=title,
     )
+    if args.lim is not None:
+        plt.ylim(args.lim[0], args.lim[1])
+        
     if args.save:
         plt.savefig("fig_gravi_align/check_spectra_%s_%s.pdf" % (sel_ref, obs_ref))
     plt.show()

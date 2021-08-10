@@ -75,6 +75,14 @@ def main(argv: Optional[List[str]] = None) -> int:
     )
 
     check_parser.add_argument(
+        "--lim",
+        nargs="+",
+        default=None,
+        type=float,
+        help="Range of intensity to plot the normalized spectra.",
+    )
+    
+    check_parser.add_argument(
         "--datadir",
         default="reduced/",
         help="Data directory to find _wave and _spectrumaligned fits (default: %(default)s)",
