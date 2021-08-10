@@ -66,6 +66,9 @@ def main(argv: Optional[List[str]] = None) -> int:
         action="store_true",
         help="Check the alignment on the first calibrator",
     )
+    check_parser.add_argument(
+        "-s", "--save", action="store_true", help="Save the figures in fig/"
+    )
 
     p2vm_parser = subparsers.add_parser(
         "p2vm", help="Modify the sof and compute the p2vm with the new _wave",

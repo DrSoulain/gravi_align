@@ -185,6 +185,10 @@ def check_align_gravity(args):
     wave, wavefile = find_wave(args)
     spectra, wl_align, spectra_align, sel_ref, obs_ref = load_data(args)
 
+    if args.save:
+        if not os.path.exists("fig_gravi_align/"):
+            os.mkdir("fig_gravi_align")
+            
     try:
         computed_shift, computed_offset = fits.open("save_shift.fits")[0].data
         computed_offset = computed_offset[0]
@@ -209,6 +213,8 @@ def check_align_gravity(args):
         wl_lim=args.wl,
         title=title,
     )
+    if args.save:
+        plt.savefig('fig_gravi_align/check_spectra_%s_%s.pdf' % (sel_ref, obs_ref))
     plt.show()
 
     return 0
