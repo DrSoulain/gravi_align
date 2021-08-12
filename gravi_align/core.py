@@ -395,7 +395,6 @@ def write_wave(calib_wave_file, shift, tellu_offset=0):
             "green",
         )
 
-    fitsHandler[0].header["HIERARCH ESO PRO CATG"] = "WAVE_BACKUP"
     fitsHandler.writeto(file_backup, overwrite=True)
 
     for hdu in fitsHandler[1:]:
