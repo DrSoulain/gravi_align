@@ -21,12 +21,12 @@ python -m pip install git+https://github.com/DrSoulain/gravi_align
 You are supposed to be on top repo where --datadir (default: reduced/)
 repository is located. This calibration step supposed that you used
 `run_gravi_reduced.py` first to save the spectrum files
-(`*spectrumaligned.fits`), and created all `*.sof`, `*.sh` and `*_wave.fits`. 
+(`*spectrumaligned.fits`), and created all `*.sof`, `*.sh` and `*_wave.fits`.
 
 The first step uses the correlation map between spectrum to compute
 inter-spectrum shifts. Spectral calibration is also performed to offset the entire
 wavelengths table fitted with telluric lines around Brγ. You can add -p to plot diagnostic
-figures. You can add -d
+figures and -s to save those figures (`fig_gravi_align/`). You can add -d
 to perform the calibration using the first calibrator file. See `gravi_align
 run -h` for details.
 
@@ -71,5 +71,5 @@ gravi_align clean
 
 The calibrated `*_wave.fits` and the new associated p2vm calibration file
 (`*_p2vm.fits`) are
-now computed. You can now run `run_gravi_reduced.py` to finally extract your
+now computed. You can now run `run_gravi_reduce.py` to finally extract your
 data including the new spectral calibration.
