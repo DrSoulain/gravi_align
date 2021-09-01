@@ -30,7 +30,11 @@ def open_spectrum_file(file, nint=25):
 
     data = fits.getdata(file, "SPECTRUM_DATA_SC")
     flux_align = np.array([data["DATA%i" % i].sum(axis=0) for i in np.arange(1, nint)])
-    wave_align = fits.open(file)["OI_WAVELENGTH", 10].data.field("EFF_WAVE") * 1e6
+    
+    try:
+        wave_align = fits.open(file)["OI_WAVELENGTH", 10].data.field("EFF_WAVE") * 1e6
+    except KeyError:
+        wave_align = fits.open(file)["OI_WAVELENGTH", 11].data.field("EFF_WAVE") * 1e6
 
     return flux, wave_align, flux_align
 
