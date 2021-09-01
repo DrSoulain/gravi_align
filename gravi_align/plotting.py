@@ -172,8 +172,8 @@ def plot_raw_spectra(
     shift=None,
     tellu_offset=0,
     wl_lim=[2.185, 0.003],
-    save=False,
     title=None,
+    args=None,
 ):
     """ """
     n_spec = spectra.shape[0]
@@ -189,11 +189,17 @@ def plot_raw_spectra(
 
         wl_fixed = (wave * 1e6) + tmp_shift - tellu_offset
 
-        cond_wl = (wl_fixed >= wl_lim[0] - wl_lim[1]) & (
-            wl_fixed <= wl_lim[0] + wl_lim[1]
-        )
+        if args is not None:
+            cond_wl = (wl_fixed >= args.corr[0]) & (wl_fixed <= args.corr[1])
+        else:
+            cond_wl = (wl_fixed >= wl_lim[0] - wl_lim[1]) & (
+                wl_fixed <= wl_lim[0] + wl_lim[1]
+            )
         plt.plot(wl_fixed[cond_wl], spec[cond_wl])
-    plt.xlim(wl_lim[0] - wl_lim[1], wl_lim[0] + wl_lim[1])
+    if args is not None:
+        plt.xlim(args.corr[0], args.corr[1])
+    else:
+        plt.xlim(wl_lim[0] - wl_lim[1], wl_lim[0] + wl_lim[1])
     plot_tellu()
     plt.xlabel(r"Wavelength [$\mu$m]")
     plt.ylabel("Normalized flux [counts]")

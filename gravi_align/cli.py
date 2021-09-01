@@ -35,6 +35,14 @@ def main(argv: Optional[List[str]] = None) -> int:
         + "Otherwise, correlation is performed on the telluric doublet around 2.18 microns.",
     )
     run_parser.add_argument(
+        "--corr",
+        nargs="+",
+        default=[2.18, 2.19],
+        type=float,
+        help="Range of wavelengths to compute the correlation.",
+    )
+    
+    run_parser.add_argument(
         "--smooth", default=1, type=int, help="Kernel size to smooth the signal."
     )
 
@@ -74,14 +82,23 @@ def main(argv: Optional[List[str]] = None) -> int:
         help="Range of wavelengths to plot the normalized spectra.",
     )
 
+    import argparse
+    
+    def two_floats(value):
+        values = value.split()
+        if len(values) != 2:
+            raise argparse.ArgumentError
+        values = list(map(float, values))
+        return values
+
     check_parser.add_argument(
         "--lim",
         nargs="+",
         default=None,
-        type=float,
+        type=two_floats,
         help="Range of intensity to plot the normalized spectra.",
     )
-    
+
     check_parser.add_argument(
         "--datadir",
         default="reduced/",
