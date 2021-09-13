@@ -69,6 +69,11 @@ def main(argv: Optional[List[str]] = None) -> int:
         default="reduced/",
         help="Data directory to find _wave and _spectrumaligned fits (default: %(default)s)",
     )
+    run_parser.add_argument(
+        "-r", "--restframe",
+        default=2.166,
+        help="Restframe to compute the uncertainty in km/s (default: %(default)s µm)",
+    )
 
     check_parser = subparsers.add_parser(
         "check",

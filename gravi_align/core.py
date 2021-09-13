@@ -30,7 +30,7 @@ def open_spectrum_file(file, nint=25):
 
     data = fits.getdata(file, "SPECTRUM_DATA_SC")
     flux_align = np.array([data["DATA%i" % i].sum(axis=0) for i in np.arange(1, nint)])
-    
+
     try:
         wave_align = fits.open(file)["OI_WAVELENGTH", 10].data.field("EFF_WAVE") * 1e6
     except KeyError:
@@ -232,6 +232,7 @@ def compute_shift(corr_map, size=5):
     x_corr = np.arange(n_channel) - pos_wl0
 
     l_shift_corr = np.zeros(n_spec)
+    l_shift_std = np.zeros(n_spec)
     for i_fit in range(n_spec):
         cond_sel = (x_corr < size) & (x_corr > -size)
         x_to_fit = x_corr[cond_sel]
@@ -239,6 +240,8 @@ def compute_shift(corr_map, size=5):
         g_init = models.Gaussian1D(amplitude=y_to_fit.max(), mean=1, stddev=1.0)
         g = fitter_gauss(g_init, x_to_fit, y_to_fit)
         l_shift_corr[i_fit] = g.mean.value
+        cov_diag = np.diag(fitter_gauss.fit_info["param_cov"])
+        l_shift_std[i_fit] = np.sqrt(cov_diag[1])
 
     x_fitted = pos_wl0 + l_shift_corr
     label_fitted = ["%2.3f" % x for x in l_shift_corr]
@@ -253,7 +256,7 @@ def compute_shift(corr_map, size=5):
 
     fit = [x_fitted, y_spectrum, label_fitted]
     polyn_model = [x_model_pol, y_model_pol, fit_mean_poly]
-    return l_shift_corr, fit, polyn_model, gpol(y_spectrum)
+    return l_shift_corr, fit, polyn_model, gpol(y_spectrum), l_shift_std
 
 
 def compute_master_ref(spectra_align, wl_align, l_shift_corr, n_box=50):

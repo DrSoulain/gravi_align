@@ -15,6 +15,7 @@ from gravi_align.core import (
 from astropy.io import fits
 import numpy as np
 from termcolor import cprint
+from scipy.constants import c as c_light
 
 
 def find_wave(args):
@@ -149,7 +150,28 @@ def perform_align_gravity(args):
     if args.save:
         plt.savefig("fig_gravi_align/corr_map_%s_%s.png" % (sel_ref, obs_ref))
 
-    computed_shift = pixel_lambda * new_shift[i_fit]  # new_shift[i_fit]
+    computed_shift = pixel_lambda * new_shift[i_fit]
+    std_shift = pixel_lambda * new_shift[4]
+
+    std_shift_vel = (std_shift.mean() / args.restframe) * c_light / 1e3
+
+    plt.figure(figsize=[9, 6])
+    plt.title(
+        r"Spectral shift applied - $\Delta\lambda_{m}$ = %2.2f km/s @ %2.3f µm"
+        % (std_shift_vel, args.restframe),
+        fontsize=16,
+    )
+    plt.errorbar(
+        np.arange(len(computed_shift)),
+        computed_shift * 1e3,
+        yerr=std_shift * 1e3,
+        label="Fit uncertainty = %2.3f nm" % (1e3 * std_shift.mean()),
+    )
+    plt.legend()
+    plt.xlabel("# Spectrum")
+    plt.ylabel("Spectral shift [nm]")
+    plt.grid(alpha=0.2)
+    plt.tight_layout()
 
     t3 = time.time()
     print("[3] Compute shifts between spectrum (%2.2f s)" % (t3 - t2))
