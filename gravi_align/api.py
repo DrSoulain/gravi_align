@@ -155,6 +155,13 @@ def perform_align_gravity(args):
 
     std_shift_vel = (std_shift.mean() / args.restframe) * c_light / 1e3
 
+    aver_shift_err = 1e3 * std_shift.mean()
+
+    print(
+        r"Averaged shift uncertainty = %2.3f nm (%2.2f km/s @ %2.3f µm)"
+        % (aver_shift_err, std_shift_vel, args.restframe)
+    )
+
     plt.figure(figsize=[9, 6])
     plt.title(
         r"Spectral shift applied - $\Delta\lambda_{m}$ = %2.2f km/s @ %2.3f µm"
@@ -172,7 +179,7 @@ def perform_align_gravity(args):
     plt.ylabel("Spectral shift [nm]")
     plt.grid(alpha=0.2)
     plt.tight_layout()
-    
+
     if args.save:
         plt.savefig("fig_gravi_align/computed_shift_%s_%s.png" % (sel_ref, obs_ref))
 
