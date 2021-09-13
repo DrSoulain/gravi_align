@@ -172,6 +172,9 @@ def perform_align_gravity(args):
     plt.ylabel("Spectral shift [nm]")
     plt.grid(alpha=0.2)
     plt.tight_layout()
+    
+    if args.save:
+        plt.savefig("fig_gravi_align/computed_shift_%s_%s.png" % (sel_ref, obs_ref))
 
     t3 = time.time()
     print("[3] Compute shifts between spectrum (%2.2f s)" % (t3 - t2))
