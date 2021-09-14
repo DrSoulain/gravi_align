@@ -1,7 +1,6 @@
 from bisect import bisect_left, insort
 from collections import deque
 from itertools import islice
-import sys
 
 import numpy as np
 import pkg_resources
@@ -96,9 +95,6 @@ def _substract_run_med(spectrum, wave=None, err=None, n_box=50, shift_wl=0, div=
     `shift_wl` can be used to shift wave table to estimate the
     spectral shift w.r.t. the telluric lines.
     """
-    # Reference spectral lines
-    brg = 2.16612
-
     r_med = _running_median(spectrum, n_box)
     boxed_flux = spectrum[n_box // 2 : -n_box // 2 + 1]
 
@@ -118,98 +114,6 @@ def _substract_run_med(spectrum, wave=None, err=None, n_box=50, shift_wl=0, div=
         res = boxed_flux / r_med
 
     return res, boxed_wave, boxed_err
-
-
-def compute_corr_map(
-    l_spec,
-    wave,
-    ref_index=0,
-    n_box=50,
-    mean=True,
-    master_ref=None,
-    brg=[2.1623, 2.17],
-    corr_lim=[2.18, 2.19],
-    div=False,
-    smooth=1,
-    err=None,
-):
-    """ Compute the 2D correlation map of several spectra
-    using the spectrum number `ref_index` as reference.
-
-    Parameters:
-    -----------
-    `list_spectrum` {array}:
-        List of spectrum (e.g.: 24 for GRAVITY),\n
-    `ref_index` {int}:
-        Index of the reference spectrum (if `mean`=False),\n
-    `n_box` {int}:
-        Size of the box to compute the running median,\n
-    `mean` {bool}:
-        If True, the averaged spectrum is used as reference,\n
-    `brg` {list}:
-        Br$\gamma$ position [$\mu$m] to be excluded from the correlation,\n
-    `corr_lim` {list}:
-        Range in $\mu$m to perform the correlation (default is around
-        Br$\gamma$, i.e.: [2.13, 2.2]),\n
-    `display` {bool}:
-        If True, plot the reference spectrum normalized.
-
-    Outputs:
-    --------
-    `corr_map` {array}:
-        List of correlation between spectrum,\n
-    `boxed_wave` {array}:
-        Resized wave table after normalization.
-    """
-    # Reference spectrum to compute the correlation matrix
-
-    n_spec = len(l_spec)
-    if mean:
-        l_norm_spec = []
-        for i in range(n_spec):
-            f_tmp, boxed_wave, boxed_err = _substract_run_med(
-                l_spec[i], wave=wave, n_box=n_box, div=div, err=err,
-            )
-            l_norm_spec.append(f_tmp)
-        l_norm_spec = np.array(l_norm_spec)
-
-        ref_spectrum = np.mean(l_norm_spec, axis=0)
-    else:
-        ref_spectrum, boxed_wave, boxed_err = _substract_run_med(
-            l_spec[ref_index], wave=wave, n_box=n_box, div=div, err=err
-        )
-
-    if master_ref is not None:
-        ref_spectrum = master_ref
-
-    smoother0 = ConvolutionSmoother(window_len=smooth, window_type="ones")
-    smoother0.smooth(ref_spectrum)
-    ref_spectrum = smoother0.smooth_data[0]
-
-    n_spec = l_spec.shape[0]
-    cond_BrG = (boxed_wave >= brg[0]) & (boxed_wave <= brg[1])
-    cond_range = (boxed_wave >= corr_lim[0]) & (boxed_wave <= corr_lim[1])
-    cond_sel = cond_range & ~cond_BrG
-
-    ref_spectrum_sel = ref_spectrum[cond_sel]
-    size_spectr_norm = ref_spectrum_sel.shape[0]
-    n_corr = (size_spectr_norm * 2) - 1
-
-    l_spec_sub = []
-    corr_map = np.zeros([n_spec, n_corr])
-
-    for i in range(n_spec):
-        inp_spectre = l_spec[i]
-        tmp = _substract_run_med(inp_spectre, n_box=n_box, err=err[i])
-        spec_to_compare = tmp[0]
-        smoother1 = ConvolutionSmoother(window_len=smooth, window_type="ones")
-        smoother1.smooth(spec_to_compare)
-        spec_to_compare = smoother1.smooth_data[0]
-        corr_tmp = correlate(ref_spectrum_sel, spec_to_compare[cond_sel])
-        corr_map[i] = corr_tmp
-        l_spec_sub.append(spec_to_compare[cond_sel])
-
-    return corr_map
 
 
 def compute_shift(corr_map, size=5):
@@ -249,15 +153,6 @@ def compute_shift(corr_map, size=5):
     fit = [x_fitted, y_spectrum, label_fitted]
     polyn_model = [x_model_pol, y_model_pol, fit_mean_poly]
     return l_shift_corr, fit, polyn_model, gpol(y_spectrum), l_shift_std
-
-
-def compute_master_ref(spectra_align, wl_align, l_shift_corr, n_box=50):
-    spectra_align_interp = apply_shift_fourier(spectra_align, l_shift_corr)
-
-    ref_spectra_shifted = spectra_align_interp.mean(axis=0)
-
-    master_ref = _substract_run_med(ref_spectra_shifted, wave=wl_align, n_box=n_box)[0]
-    return master_ref
 
 
 def apply_shift_fourier(l_spec, l_shift):
@@ -413,7 +308,7 @@ def compute_sel_spectra(
     """ Normalize and select spectrum around a specified correlation region (by
     default around 2.185 µm telluric doublet [`corr`]). Compute flag in data point are too
     far from the 5-sigma [`sigma`] limits (averaged standard dev between spectra)."""
-    cc = plt.cm.turbo(np.linspace(0, 1, len(spectra_align)))
+    # cc = plt.cm.turbo(np.linspace(0, 1, len(spectra_align)))
 
     sel_flux, sel_wl, sel_std, sel_err = [], [], [], []
     for i in range(len(spectra_align)):
@@ -438,29 +333,15 @@ def compute_sel_spectra(
     sel_err = np.array(sel_err)
 
     sel_flag = []
-    plt.figure(figsize=(5, 8))
     for i in range(len(sel_flux)):
         flux = sel_flux[i] + i * 4 * master_std
         aver = np.mean(flux)
         cond_flag = (flux >= aver - 1.5 * master_std) & (flux <= aver + 1 * master_std)
         sel_flag.append(cond_flag)
-        plt.plot(master_wl[~cond_flag], flux[~cond_flag], "rx")
-        plt.plot(master_wl, flux, color=cc[i])
-        plt.axhspan(
-            aver - 1.5 * master_std, aver + 1 * master_std, alpha=0.1, color=cc[i]
-        )
-
-    plt.axvline(np.nan, lw=0.5, c="crimson", alpha=0.5, label="Tellurics")
-    for i in range(len(tellu)):
-        plt.axvline(tellu[i], lw=0.5, c="crimson", alpha=0.5)
-
-    plt.xlabel("Wavelength [µm]")
-    plt.ylabel("Flux [arbitrary unit]")
-    plt.xlim(corr)
-
     sel_flag = np.array(sel_flag)
 
-    print(sel_std.shape)
+    master_wl_backup = master_wl.copy()
+
     if use_flag:
         master_flag = np.mean(sel_flag, axis=0) == 1
         master_wl = master_wl[master_flag]
@@ -470,25 +351,103 @@ def compute_sel_spectra(
         for i in range(len(sel_flux)):
             sel_flux_flag[i] = sel_flux[i][master_flag]
             sel_err_flag[i] = sel_err[i][master_flag]
-
         master_spectrum = np.mean(sel_flux_flag, axis=0)
     else:
+        master_flag = np.zeros(len(sel_flux)) == 0
         master_spectrum = np.mean(sel_flux, axis=0)
         sel_flux_flag = sel_flux
         sel_err_flag = sel_err
 
-    plt.plot(master_wl, master_spectrum + 24 * 4 * master_std, "k+-", lw=2,
-             label='Master spectra')
-    
-    ymin = np.mean(master_spectrum - 1 * 4 * master_std)
-    ymax = np.mean(master_spectrum + 26 * 4 * master_std)
-    
+    ymin = np.mean(master_spectrum - 25 * 4 * master_std)
+    ymax = np.mean(master_spectrum + 2 * 4 * master_std)
+
+    plt.figure(figsize=(6, 8))
+    plt.title("GRAVITY 24 spectra", fontsize=16)
+    for i in range(len(sel_flux)):
+        flux = sel_flux[i] - i * 4 * master_std
+        aver = np.mean(flux)
+        cond_flag = (flux >= aver - 1.5 * master_std) & (flux <= aver + 1 * master_std)
+        plt.plot(master_wl_backup, flux, lw=1, color="gray")
+        plt.scatter(
+            master_wl_backup,
+            flux,
+            c=flux,
+            zorder=10,
+            s=25,
+            marker=".",
+            cmap="coolwarm_r",
+        )
+        plt.plot(master_wl_backup[~cond_flag], flux[~cond_flag], "rx", zorder=20, ms=10)
+    plt.plot(
+        master_wl,
+        master_spectrum + 1 * 4 * master_std,
+        "k+-",
+        lw=2,
+        label="Master spectra",
+    )
+    plt.plot(np.nan, np.nan, "rx", label="Flagged")
     plt.ylim(ymin, ymax)
-    plt.legend(loc='best', fontsize=8)
+    plt.legend(loc="best", fontsize=8)
+    plt.xlabel("Wavelength [µm]")
+    plt.ylabel("Flux [arbitrary unit]")
+    plt.xlim(corr)
     plt.tight_layout()
 
-    return master_spectrum, master_wl, sel_err_flag, master_flag
+    return master_spectrum, master_wl, sel_flux_flag, sel_err_flag, master_flag
 
 
-def compute_corr_map_v2():
-    """ """
+def compute_corr_map(
+    selected_spectra, master_ref=None, smooth=1, brg=[2.1623, 2.17],
+):
+    """ Compute the 2D correlation map of several spectra.
+
+    Parameters:
+    -----------
+    `selected_spectra` {array}:
+        Spectrally selected and flagged array from `compute_sel_spectra()`,\n
+    `master_ref` {array}:
+        If any, master_ref is used as reference spectra,\n
+    `smooth` {int}:
+        Gaussian smoother size,\n
+    `brg` {list}:
+        Br$\gamma$ position [$\mu$m] to be excluded from the correlation,\n
+
+    Outputs:
+    --------
+    `corr_map` {array}:
+        Correlation matrix.
+    """
+
+    master_spectrum = selected_spectra[0]
+    boxed_wave = selected_spectra[1]
+
+    l_spec = selected_spectra[2]
+
+    ref_spectrum = master_spectrum
+    if master_ref is not None:
+        ref_spectrum = master_ref
+
+    smoother0 = ConvolutionSmoother(window_len=smooth, window_type="ones")
+    smoother0.smooth(ref_spectrum)
+    ref_spectrum = smoother0.smooth_data[0]
+
+    n_spec = l_spec.shape[0]
+    cond_BrG = (boxed_wave >= brg[0]) & (boxed_wave <= brg[1])
+
+    ref_spectrum_sel = ref_spectrum[~cond_BrG]
+    size_spectr_norm = ref_spectrum_sel.shape[0]
+    n_corr = (size_spectr_norm * 2) - 1
+
+    l_spec_sub = []
+    corr_map = np.zeros([n_spec, n_corr])
+
+    for i in range(n_spec):
+        spec_to_compare = l_spec[i]
+        smoother1 = ConvolutionSmoother(window_len=smooth, window_type="ones")
+        smoother1.smooth(spec_to_compare)
+        spec_to_compare = smoother1.smooth_data[0]
+        corr_tmp = correlate(ref_spectrum_sel, spec_to_compare[~cond_BrG])
+        corr_map[i] = corr_tmp
+        l_spec_sub.append(spec_to_compare[~cond_BrG])
+
+    return corr_map
