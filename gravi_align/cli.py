@@ -29,6 +29,9 @@ def main(argv: Optional[List[str]] = None) -> int:
         "--poly", action="store_true", help="Use the polynomial fit as shifts."
     )
     run_parser.add_argument(
+        "--flag", action="store_true", help="Use flag to reject data point with sigma-clipping."
+    )
+    run_parser.add_argument(
         "--full",
         action="store_true",
         help="Compute the correlation map using large wavelength range (2.1-2.2). "
@@ -37,7 +40,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     run_parser.add_argument(
         "--corr",
         nargs="+",
-        default=[2.18, 2.187],
+        default=[2.182, 2.1865],
         type=float,
         help="Range of wavelengths to compute the correlation.",
     )
@@ -45,6 +48,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     run_parser.add_argument(
         "--smooth", default=1, type=int, help="Kernel size to smooth the signal."
     )
+    
 
     run_parser.add_argument(
         "-p",
