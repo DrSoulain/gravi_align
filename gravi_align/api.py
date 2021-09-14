@@ -1,5 +1,4 @@
 from glob import glob
-import sys
 import time
 import os
 
@@ -7,13 +6,11 @@ from matplotlib import pyplot as plt
 from gravi_align.plotting import (
     plot_corr_map,
     plot_raw_spectra,
-    plot_tellu,
     plot_tellu_fit,
 )
 from gravi_align.core import (
-    _substract_run_med,
+    apply_shift_fourier,
     compute_corr_map,
-    compute_master_ref,
     compute_sel_spectra,
     compute_shift,
     fit_tellu_offset,
@@ -112,31 +109,31 @@ def perform_align_gravity(args):
             % (time.time() - start_time)
         )
         return 0
-    
+
     if args.save:
         if not os.path.exists("fig_gravi_align/"):
             os.mkdir("fig_gravi_align")
 
     spectra, wl_align, spectra_align, e_spectra, sel_ref, obs_ref = load_data(args)
 
-    selected_spectra = compute_sel_spectra(spectra_align, wl_align, e_spectra, corr=args.corr)
-    
+    corr_lim = args.corr
+    if args.full:
+        corr_lim = [2.1, 2.2]
+
+    selected_spectra = compute_sel_spectra(
+        spectra_align, wl_align, e_spectra, corr=corr_lim, use_flag=args.flag
+    )
+
     if args.save:
         plt.savefig("fig_gravi_align/Selected_spectrum_%s_%s.png" % (sel_ref, obs_ref))
-        
+
     t1 = time.time()
     print("[1] Load files (%2.2f s)" % (t1 - start_time))
     # Size of the box to compute the running median and normalize the spectra
     n_spec = spectra_align.shape[0]
 
-    corr_lim = args.corr
-    if args.full:
-        corr_lim = [2.1, 2.2]
+    corr_map = compute_corr_map(selected_spectra, smooth=args.smooth)
 
-    # Compute the cross-correlation function as 2D array
-    corr_map = compute_corr_map(
-        spectra_align, wl_align, corr_lim=corr_lim, smooth=args.smooth, err=e_spectra,
-    )
     t2 = time.time()
     print("[2] Compute correlation map (%2.2f s)" % (t2 - t1))
 
@@ -149,15 +146,11 @@ def perform_align_gravity(args):
         i_fit = 3
 
     pixel_lambda = np.diff(wl_align).mean()
-    master_ref = compute_master_ref(spectra_align, wl_align, shift[i_fit])
-    # Compute the cross-correlation function as 2D array
+
+    master_ref = apply_shift_fourier(selected_spectra[2], shift[i_fit])
+
     corr_map = compute_corr_map(
-        spectra_align,
-        wl_align,
-        master_ref=master_ref,
-        corr_lim=corr_lim,
-        smooth=args.smooth,
-        err=e_spectra,
+        selected_spectra, smooth=args.smooth, master_ref=master_ref
     )
     new_shift = compute_shift(corr_map)
 
@@ -165,6 +158,7 @@ def perform_align_gravity(args):
     if args.save:
         plt.savefig("fig_gravi_align/corr_map_%s_%s.png" % (sel_ref, obs_ref))
 
+    pixel_lambda_nm = pixel_lambda * 1000
     computed_shift = pixel_lambda * new_shift[i_fit]
     std_shift = pixel_lambda * new_shift[4]
 
@@ -172,9 +166,20 @@ def perform_align_gravity(args):
 
     aver_shift_err = 1e3 * std_shift.mean()
 
+    computed_shift_nm = computed_shift * 1e3
+
     print(
-        r"Averaged shift uncertainty = %2.3f nm (%2.2f km/s @ %2.3f µm)"
-        % (aver_shift_err, std_shift_vel, args.restframe)
+        r"-> Applied shifts between %2.3f and %2.3f nm."
+        % (computed_shift_nm.min(), computed_shift_nm.max())
+    )
+    print(
+        r"-> Averaged shift uncertainty = %2.3f nm/%2.3f pixels (%2.2f km/s @ %2.3f µm)"
+        % (
+            aver_shift_err,
+            aver_shift_err / pixel_lambda_nm,
+            std_shift_vel,
+            args.restframe,
+        )
     )
 
     plt.figure(figsize=[9, 6])
@@ -183,12 +188,24 @@ def perform_align_gravity(args):
         % (std_shift_vel, args.restframe),
         fontsize=16,
     )
-    plt.errorbar(
-        np.arange(len(computed_shift)),
-        computed_shift * 1e3,
-        yerr=std_shift * 1e3,
-        label="Fit uncertainty = %2.3f nm" % (1e3 * std_shift.mean()),
+
+    ss = np.array(["%2.2f" % x for x in computed_shift_nm])
+    xx = np.arange(len(computed_shift))
+    yy = computed_shift_nm
+    for i in range(len(ss)):
+        plt.text(xx[i], yy[i]+0.005, ss[i], fontsize=8, color="r", ha="center", va="center")
+
+    plt.plot(
+        np.arange(len(computed_shift)), computed_shift * 1e3,
     )
+    plt.fill_between(
+        np.arange(len(computed_shift)),
+        y1=computed_shift * 1e3 - std_shift * 1e3,
+        y2=computed_shift * 1e3 + std_shift * 1e3,
+        alpha=0.3,
+        label="Mean fit uncertainty = %2.3f nm" % (1e3 * std_shift.mean()),
+    )
+
     plt.legend()
     plt.xlabel("# Spectrum")
     plt.ylabel("Spectral shift [nm]")
