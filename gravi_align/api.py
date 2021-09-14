@@ -1,12 +1,20 @@
 from glob import glob
+import sys
 import time
 import os
 
 from matplotlib import pyplot as plt
-from gravi_align.plotting import plot_corr_map, plot_raw_spectra, plot_tellu_fit
+from gravi_align.plotting import (
+    plot_corr_map,
+    plot_raw_spectra,
+    plot_tellu,
+    plot_tellu_fit,
+)
 from gravi_align.core import (
+    _substract_run_med,
     compute_corr_map,
     compute_master_ref,
+    compute_sel_spectra,
     compute_shift,
     fit_tellu_offset,
     open_spectrum_file,
@@ -82,14 +90,14 @@ def load_data(args):
         cprint("-> %s file %s (%s)" % (s, sel_ref, obs_ref), "cyan")
 
         filename = l_file[choosen_index]
-        spectra, wl_align, spectra_align = open_spectrum_file(filename)
+        spectra, wl_align, spectra_align, e_spectra_align = open_spectrum_file(filename)
     except IndexError:
         raise IndexError(
             "Selected index (%i) not valid (only %i files found)."
             % (choosen_index, len(l_file))
         )
 
-    return spectra, wl_align, spectra_align, sel_ref, obs_ref
+    return spectra, wl_align, spectra_align, e_spectra_align, sel_ref, obs_ref
 
 
 def perform_align_gravity(args):
@@ -104,8 +112,18 @@ def perform_align_gravity(args):
             % (time.time() - start_time)
         )
         return 0
+    
+    if args.save:
+        if not os.path.exists("fig_gravi_align/"):
+            os.mkdir("fig_gravi_align")
 
-    spectra, wl_align, spectra_align, sel_ref, obs_ref = load_data(args)
+    spectra, wl_align, spectra_align, e_spectra, sel_ref, obs_ref = load_data(args)
+
+    selected_spectra = compute_sel_spectra(spectra_align, wl_align, e_spectra, corr=args.corr)
+    
+    if args.save:
+        plt.savefig("fig_gravi_align/Selected_spectrum_%s_%s.png" % (sel_ref, obs_ref))
+        
     t1 = time.time()
     print("[1] Load files (%2.2f s)" % (t1 - start_time))
     # Size of the box to compute the running median and normalize the spectra
@@ -117,7 +135,7 @@ def perform_align_gravity(args):
 
     # Compute the cross-correlation function as 2D array
     corr_map = compute_corr_map(
-        spectra_align, wl_align, corr_lim=corr_lim, smooth=args.smooth
+        spectra_align, wl_align, corr_lim=corr_lim, smooth=args.smooth, err=e_spectra,
     )
     t2 = time.time()
     print("[2] Compute correlation map (%2.2f s)" % (t2 - t1))
@@ -139,12 +157,9 @@ def perform_align_gravity(args):
         master_ref=master_ref,
         corr_lim=corr_lim,
         smooth=args.smooth,
+        err=e_spectra,
     )
     new_shift = compute_shift(corr_map)
-
-    if args.save:
-        if not os.path.exists("fig_gravi_align/"):
-            os.mkdir("fig_gravi_align")
 
     plot_corr_map(corr_map, new_shift[1], new_shift[2])
     if args.save:
@@ -251,7 +266,7 @@ def perform_align_gravity(args):
 def check_align_gravity(args):
     print(" -------- Check GRAVITY spectral alignment --------")
     wave, wavefile = find_wave(args)
-    spectra, wl_align, spectra_align, sel_ref, obs_ref = load_data(args)
+    spectra, wl_align, spectra_align, e_spectra, sel_ref, obs_ref = load_data(args)
 
     if args.save:
         if not os.path.exists("fig_gravi_align/"):

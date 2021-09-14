@@ -37,7 +37,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     run_parser.add_argument(
         "--corr",
         nargs="+",
-        default=[2.18, 2.19],
+        default=[2.18, 2.187],
         type=float,
         help="Range of wavelengths to compute the correlation.",
     )

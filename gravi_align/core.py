@@ -1,6 +1,7 @@
 from bisect import bisect_left, insort
 from collections import deque
 from itertools import islice
+import sys
 
 import numpy as np
 import pkg_resources
@@ -15,7 +16,6 @@ from tsmoothie.smoother import ConvolutionSmoother
 file_tellu = pkg_resources.resource_stream(
     "gravi_align", "internal_data/Telluric_lines.txt"
 )
-
 tellu = np.loadtxt(file_tellu, skiprows=1)
 
 
@@ -30,13 +30,16 @@ def open_spectrum_file(file, nint=25):
 
     data = fits.getdata(file, "SPECTRUM_DATA_SC")
     flux_align = np.array([data["DATA%i" % i].sum(axis=0) for i in np.arange(1, nint)])
+    e_flux_align = np.array(
+        [data["DATAERR%i" % i].sum(axis=0) for i in np.arange(1, nint)]
+    )
 
     try:
         wave_align = fits.open(file)["OI_WAVELENGTH", 10].data.field("EFF_WAVE") * 1e6
     except KeyError:
         wave_align = fits.open(file)["OI_WAVELENGTH", 11].data.field("EFF_WAVE") * 1e6
 
-    return flux, wave_align, flux_align
+    return flux, wave_align, flux_align, e_flux_align
 
 
 def _running_median(seq, M):
@@ -85,7 +88,7 @@ def _running_median(seq, M):
     return medians
 
 
-def _substract_run_med(spectrum, wave=None, n_box=50, shift_wl=0, div=False):
+def _substract_run_med(spectrum, wave=None, err=None, n_box=50, shift_wl=0, div=False):
     """ Substract running median from a raw spectrum `f`. The median
     is computed at each points from n_box/2 to -n_box/2+1 in a
     'box' of size `n_box`. The Br gamma line in vaccum and telluric
@@ -100,35 +103,21 @@ def _substract_run_med(spectrum, wave=None, n_box=50, shift_wl=0, div=False):
     boxed_flux = spectrum[n_box // 2 : -n_box // 2 + 1]
 
     boxed_wave = np.arange(len(boxed_flux))
+    boxed_err = np.zeros_like(boxed_flux)
+
     if wave is not None:
         boxed_wave = wave[n_box // 2 : -n_box // 2 + 1] - shift_wl
 
-    fontsize = 12
-    if False:
-        plt.figure(figsize=[13, 8])
-        ax1 = plt.subplot(211)
-        plt.plot(
-            boxed_wave,
-            boxed_flux,
-            label=r"Raw spectrum ($\lambda_{off}$ = %2.2fnm)" % (shift_wl * 1000),
-        )
-        plt.plot(boxed_wave, r_med, label="Running median")
-        plt.axvline(brg, color="#008f53", label=r"Br$\gamma$ line")
-        plt.legend(fontsize=fontsize)
-        plt.ylabel("Flux [counts]", fontsize=fontsize)
-        plt.xlabel(r"Wavelengths [$\mu$m]", fontsize=fontsize)
-        plt.subplot(212, sharex=ax1)
-        plt.plot(boxed_wave, boxed_flux - r_med)
-        plt.ylabel("Normalized flux [counts]", fontsize=fontsize)
-        plt.xlabel(r"Wavelengths [$\mu$m]", fontsize=fontsize)
-        plt.axvline(brg, color="#008f53", label=r"Br$\gamma$ line")
-        plt.tight_layout()
+    if err is not None:
+        boxed_err = err[n_box // 2 : -n_box // 2 + 1]
+
+    boxed_err = np.array(boxed_err)
 
     res = boxed_flux - r_med
     if div:
         res = boxed_flux / r_med
 
-    return res, boxed_wave
+    return res, boxed_wave, boxed_err
 
 
 def compute_corr_map(
@@ -142,6 +131,7 @@ def compute_corr_map(
     corr_lim=[2.18, 2.19],
     div=False,
     smooth=1,
+    err=None,
 ):
     """ Compute the 2D correlation map of several spectra
     using the spectrum number `ref_index` as reference.
@@ -177,16 +167,16 @@ def compute_corr_map(
     if mean:
         l_norm_spec = []
         for i in range(n_spec):
-            f_tmp, boxed_wave = _substract_run_med(
-                l_spec[i], wave=wave, n_box=n_box, div=div
+            f_tmp, boxed_wave, boxed_err = _substract_run_med(
+                l_spec[i], wave=wave, n_box=n_box, div=div, err=err,
             )
             l_norm_spec.append(f_tmp)
         l_norm_spec = np.array(l_norm_spec)
 
         ref_spectrum = np.mean(l_norm_spec, axis=0)
     else:
-        ref_spectrum, boxed_wave = _substract_run_med(
-            l_spec[ref_index], wave=wave, n_box=n_box, div=div
+        ref_spectrum, boxed_wave, boxed_err = _substract_run_med(
+            l_spec[ref_index], wave=wave, n_box=n_box, div=div, err=err
         )
 
     if master_ref is not None:
@@ -207,9 +197,11 @@ def compute_corr_map(
 
     l_spec_sub = []
     corr_map = np.zeros([n_spec, n_corr])
+
     for i in range(n_spec):
         inp_spectre = l_spec[i]
-        spec_to_compare = _substract_run_med(inp_spectre, n_box=n_box)[0]
+        tmp = _substract_run_med(inp_spectre, n_box=n_box, err=err[i])
+        spec_to_compare = tmp[0]
         smoother1 = ConvolutionSmoother(window_len=smooth, window_type="ones")
         smoother1.smooth(spec_to_compare)
         spec_to_compare = smoother1.smooth_data[0]
@@ -413,3 +405,90 @@ def write_wave(calib_wave_file, shift, tellu_offset=0):
                 hdu.data["DATA%i" % i] = datai
     fitsHandler.writeto(calib_wave_file, overwrite=True)
     return None
+
+
+def compute_sel_spectra(
+    spectra_align, wl_align, e_spectra, corr, nbox=50, sigma=5, use_flag=True
+):
+    """ Normalize and select spectrum around a specified correlation region (by
+    default around 2.185 µm telluric doublet [`corr`]). Compute flag in data point are too
+    far from the 5-sigma [`sigma`] limits (averaged standard dev between spectra)."""
+    cc = plt.cm.turbo(np.linspace(0, 1, len(spectra_align)))
+
+    sel_flux, sel_wl, sel_std, sel_err = [], [], [], []
+    for i in range(len(spectra_align)):
+        inp_spectre = spectra_align[i]
+        tmp = _substract_run_med(
+            inp_spectre, wave=wl_align, n_box=nbox, err=e_spectra[i]
+        )
+        cond_wl2 = (tmp[1] >= corr[0]) & (tmp[1] <= corr[1])
+        wl = tmp[1][cond_wl2]
+        flux = tmp[0][cond_wl2]
+        err = tmp[2][cond_wl2]
+        std = sigma * flux.std()
+        sel_std.append(std)
+        sel_err.append(err)
+        sel_flux.append(flux)
+        sel_wl.append(wl)
+    master_std = np.mean(sel_std)
+    master_wl = sel_wl[0]
+
+    sel_flux = np.array(sel_flux)
+    sel_std = np.array(sel_std)
+    sel_err = np.array(sel_err)
+
+    sel_flag = []
+    plt.figure(figsize=(5, 8))
+    for i in range(len(sel_flux)):
+        flux = sel_flux[i] + i * 4 * master_std
+        aver = np.mean(flux)
+        cond_flag = (flux >= aver - 1.5 * master_std) & (flux <= aver + 1 * master_std)
+        sel_flag.append(cond_flag)
+        plt.plot(master_wl[~cond_flag], flux[~cond_flag], "rx")
+        plt.plot(master_wl, flux, color=cc[i])
+        plt.axhspan(
+            aver - 1.5 * master_std, aver + 1 * master_std, alpha=0.1, color=cc[i]
+        )
+
+    plt.axvline(np.nan, lw=0.5, c="crimson", alpha=0.5, label="Tellurics")
+    for i in range(len(tellu)):
+        plt.axvline(tellu[i], lw=0.5, c="crimson", alpha=0.5)
+
+    plt.xlabel("Wavelength [µm]")
+    plt.ylabel("Flux [arbitrary unit]")
+    plt.xlim(corr)
+
+    sel_flag = np.array(sel_flag)
+
+    print(sel_std.shape)
+    if use_flag:
+        master_flag = np.mean(sel_flag, axis=0) == 1
+        master_wl = master_wl[master_flag]
+
+        sel_flux_flag = np.zeros([len(sel_flux), len(master_wl)])
+        sel_err_flag = np.zeros_like(sel_flux_flag)
+        for i in range(len(sel_flux)):
+            sel_flux_flag[i] = sel_flux[i][master_flag]
+            sel_err_flag[i] = sel_err[i][master_flag]
+
+        master_spectrum = np.mean(sel_flux_flag, axis=0)
+    else:
+        master_spectrum = np.mean(sel_flux, axis=0)
+        sel_flux_flag = sel_flux
+        sel_err_flag = sel_err
+
+    plt.plot(master_wl, master_spectrum + 24 * 4 * master_std, "k+-", lw=2,
+             label='Master spectra')
+    
+    ymin = np.mean(master_spectrum - 1 * 4 * master_std)
+    ymax = np.mean(master_spectrum + 26 * 4 * master_std)
+    
+    plt.ylim(ymin, ymax)
+    plt.legend(loc='best', fontsize=8)
+    plt.tight_layout()
+
+    return master_spectrum, master_wl, sel_err_flag, master_flag
+
+
+def compute_corr_map_v2():
+    """ """

@@ -87,7 +87,7 @@ def plot_spectra(
     norm_spec = []
     norm_wl = []
     for i in range(n_spec):
-        spec, wave_b = _substract_run_med(
+        spec, wave_b, err_b = _substract_run_med(
             l_spec[i], wave=wave, n_box=n_box, div=div, display=display
         )
         if l_offset is not None:
@@ -181,7 +181,7 @@ def plot_raw_spectra(
     fig = plt.figure(figsize=[9, 6])
     plt.title(title, fontsize=16)
     for i in range(n_spec):
-        spec, wave = _substract_run_med(spectra[i], wave_cal[i])
+        spec, wave, err = _substract_run_med(spectra[i], wave_cal[i])
         if shift is None:
             tmp_shift = 0
         else:
