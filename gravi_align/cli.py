@@ -29,7 +29,9 @@ def main(argv: Optional[List[str]] = None) -> int:
         "--poly", action="store_true", help="Use the polynomial fit as shifts."
     )
     run_parser.add_argument(
-        "--flag", action="store_true", help="Use flag to reject data point with sigma-clipping."
+        "--flag",
+        action="store_true",
+        help="Use flag to reject data point with sigma-clipping.",
     )
     run_parser.add_argument(
         "--full",
@@ -44,11 +46,13 @@ def main(argv: Optional[List[str]] = None) -> int:
         type=float,
         help="Range of wavelengths to compute the correlation.",
     )
-    
+
     run_parser.add_argument(
         "--smooth", default=1, type=int, help="Kernel size to smooth the signal."
     )
-    
+    run_parser.add_argument(
+        "--sigma", default=5, type=int, help="Number of sigma to compute flag."
+    )
 
     run_parser.add_argument(
         "-p",
@@ -74,7 +78,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         help="Data directory to find _wave and _spectrumaligned fits (default: %(default)s)",
     )
     run_parser.add_argument(
-        "-r", "--restframe",
+        "-r",
+        "--restframe",
         default=2.166,
         help="Restframe to compute the uncertainty in km/s (default: %(default)s µm)",
     )
@@ -92,7 +97,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     )
 
     import argparse
-    
+
     def two_floats(value):
         values = value.split()
         if len(values) != 2:

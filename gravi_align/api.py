@@ -121,7 +121,8 @@ def perform_align_gravity(args):
         corr_lim = [2.1, 2.2]
 
     selected_spectra = compute_sel_spectra(
-        spectra_align, wl_align, e_spectra, corr=corr_lim, use_flag=args.flag
+        spectra_align, wl_align, e_spectra, corr=corr_lim, use_flag=args.flag,
+        sigma=args.sigma
     )
 
     if args.save:
