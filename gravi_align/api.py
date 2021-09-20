@@ -133,7 +133,7 @@ def perform_align_gravity(args):
     # Size of the box to compute the running median and normalize the spectra
     n_spec = spectra_align.shape[0]
 
-    corr_map = compute_corr_map(selected_spectra, smooth=args.smooth)
+    corr_map = compute_corr_map(selected_spectra, smooth=args.smooth, use_brg=args.brg)
 
     t2 = time.time()
     print("[2] Compute correlation map (%2.2f s)" % (t2 - t1))
@@ -151,7 +151,7 @@ def perform_align_gravity(args):
     master_ref = apply_shift_fourier(selected_spectra[2], shift[i_fit])
 
     corr_map = compute_corr_map(
-        selected_spectra, smooth=args.smooth, master_ref=master_ref
+        selected_spectra, smooth=args.smooth, master_ref=master_ref, use_brg=args.brg
     )
     new_shift = compute_shift(corr_map)
 

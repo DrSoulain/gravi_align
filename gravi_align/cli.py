@@ -53,6 +53,12 @@ def main(argv: Optional[List[str]] = None) -> int:
     run_parser.add_argument(
         "--sigma", default=5, type=int, help="Number of sigma to compute flag."
     )
+    run_parser.add_argument(
+        "--brg",
+        action="store_true",
+        type=int,
+        help="Allow to use Br gamma during the correlation (default: False).",
+    )
 
     run_parser.add_argument(
         "-p",

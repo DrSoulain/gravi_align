@@ -397,7 +397,7 @@ def compute_sel_spectra(
 
 
 def compute_corr_map(
-    selected_spectra, master_ref=None, smooth=1, brg=[2.1623, 2.17],
+    selected_spectra, master_ref=None, smooth=1, brg=[2.1623, 2.17], use_brg=True,
 ):
     """ Compute the 2D correlation map of several spectra.
 
@@ -432,7 +432,11 @@ def compute_corr_map(
     ref_spectrum = smoother0.smooth_data[0]
 
     n_spec = l_spec.shape[0]
-    cond_BrG = (boxed_wave >= brg[0]) & (boxed_wave <= brg[1])
+
+    if not use_brg:
+        cond_BrG = (boxed_wave >= brg[0]) & (boxed_wave <= brg[1])
+    else:
+        cond_BrG = boxed_wave > 0
 
     ref_spectrum_sel = ref_spectrum[~cond_BrG]
     size_spectr_norm = ref_spectrum_sel.shape[0]
