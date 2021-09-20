@@ -436,8 +436,8 @@ def compute_corr_map(
     if not use_brg:
         cond_BrG = (boxed_wave >= brg[0]) & (boxed_wave <= brg[1])
     else:
-        cond_BrG = boxed_wave > 0
-
+        cond_BrG = boxed_wave < 0
+    
     ref_spectrum_sel = ref_spectrum[~cond_BrG]
     size_spectr_norm = ref_spectrum_sel.shape[0]
     n_corr = (size_spectr_norm * 2) - 1
