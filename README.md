@@ -56,8 +56,8 @@ gravi_align run --corr 2.16 2.17
 By default, the Brγ line is skipped by the correlation to focus on telluric lines. For noisy data, where tellurics are too weak, you can
 force to use the Brγ region by adding `--brg`.
 
-
-Once good and satisfied by the alignment, you can overwrite the `*_wave.fits` with:
+Once good and satisfied by the alignment, you can overwrite the `*_wave.fits`
+with the same arguments (-corr, --flag, --brg, etc. if any):
 
 ```bash
 gravi_align run -w
