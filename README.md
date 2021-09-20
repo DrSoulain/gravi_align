@@ -25,8 +25,17 @@ repository is located. This calibration step supposed that you used
 
 The first step uses the correlation map between spectrum to compute
 inter-spectrum shifts. Spectral calibration is also performed to offset the entire
-wavelengths table fitted with telluric lines around Brγ. You can add -p to plot diagnostic
-figures and -s to save those figures (`fig_gravi_align/`). You can add -d
+wavelengths table fitted with telluric lines around Brγ. You can add `-p` to plot diagnostic
+figures and `-s` to save those figures (`fig_gravi_align/`). The diagnostic
+figures include the computation of the applied shifts (in nm, 'compute_shift_\*.png'), the correlation
+map ('corr_map_\*.png'), the raw ('raw_spectra_\*.png') and aligned spectrum ('aligned_spectra_\*.png'), the absolute
+tellurics fit ('fit_tellu_\*.png') and the spectra plot
+('Selected_spectrum_*.png'). 
+
+> Note: If you used `--flag` argument,
+'Selected_spectrum_*.png' show the rejected points for each spectrum.
+
+You can add `-d`
 to perform the calibration using the first calibrator file. See `gravi_align
 run -h` for details.
 
@@ -34,8 +43,19 @@ run -h` for details.
 gravi_align run
 ```
 
-> Note: By default, the shifts are computed using the telluric doublet around
-> 2.18 µm. If you want to use a broader range of wavelength, add the option --full.
+> Note: By default, the shifts are computed using the telluric doublet around 2.18 µm (2.182, 2.1865).
+
+You can select an other region by adding `--corr` argument:
+
+```bash
+gravi_align run --corr 2.16 2.17
+```
+
+> Tips: It is usefull to check the region around Brγ (i.e.: --corr 2.146 2.186).
+
+By default, the Brγ line is skipped by the correlation to focus on telluric lines. For noisy data, where tellurics are too weak, you can
+force to use the Brγ region by adding `--brg`.
+
 
 Once good and satisfied by the alignment, you can overwrite the `*_wave.fits` with:
 
@@ -47,10 +67,9 @@ You can check the different spectrum (`*_spectrumaligned.fits`) alignment
 present in --datadir (default: reduced/):
 
 ```bash
-gravi_align check
+gravi_align check --wl 2.166 0.02
 ```
 
-> Note: you are invited to select a file.
 
 Then, you can modify the .sof corresponding to p2vm computation (add modified
 `*_wave.fits` as `WAVE`) and run the p2vm recipe (esorex).
