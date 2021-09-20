@@ -56,7 +56,6 @@ def main(argv: Optional[List[str]] = None) -> int:
     run_parser.add_argument(
         "--brg",
         action="store_true",
-        type=int,
         help="Allow to use Br gamma during the correlation (default: False).",
     )
 
