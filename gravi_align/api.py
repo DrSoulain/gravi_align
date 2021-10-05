@@ -3,6 +3,7 @@ import time
 import os
 
 from matplotlib import pyplot as plt
+from scipy.constants.codata import parse_constants_2002to2014
 from gravi_align.plotting import (
     plot_corr_map,
     plot_raw_spectra,
@@ -82,8 +83,9 @@ def load_data(args):
         s = "Checked"
 
     try:
-        sel_ref = fits.open(l_file[choosen_index])[0].header["OBJECT"]
-        obs_ref = fits.open(l_file[choosen_index])[0].header["DATE-OBS"]
+        f = l_file[choosen_index]
+        sel_ref = fits.open(f)[0].header["OBJECT"]
+        obs_ref = fits.open(f)[0].header["DATE-OBS"]
         cprint("-> %s file %s (%s)" % (s, sel_ref, obs_ref), "cyan")
 
         filename = l_file[choosen_index]
@@ -94,6 +96,12 @@ def load_data(args):
             % (choosen_index, len(l_file))
         )
 
+    try:
+        sel_ref = fits.open(f)[0].header["HIERARCH ESO INS SOBJ NAME"]
+    except KeyError:
+        pass
+
+    # HIERARCH ESO INS SOBJ NAME
     return spectra, wl_align, spectra_align, e_spectra_align, sel_ref, obs_ref, filename
 
 
@@ -249,9 +257,9 @@ def perform_align_gravity(args):
 
     hdr["dir"] = os.getcwd()
     hdr["corr"] = "%2.3f-%2.3f" % (args.corr[0], args.corr[1])
-    
+
     fits.writeto(
-        "save_shift_%s.fits" % (obs_ref),
+        "save_shift_%s.fits" % (sel_ref),
         np.array(
             [
                 computed_shift,
