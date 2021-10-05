@@ -259,7 +259,7 @@ def perform_align_gravity(args):
     hdr["corr"] = "%2.3f-%2.3f" % (args.corr[0], args.corr[1])
 
     fits.writeto(
-        "save_shift_%s.fits" % (sel_ref),
+        "save_shift_%s_%s.fits" % (sel_ref, obs_ref),
         np.array(
             [
                 computed_shift,
