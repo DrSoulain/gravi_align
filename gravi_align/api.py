@@ -121,8 +121,12 @@ def perform_align_gravity(args):
         corr_lim = [2.1, 2.2]
 
     selected_spectra = compute_sel_spectra(
-        spectra_align, wl_align, e_spectra, corr=corr_lim, use_flag=args.flag,
-        sigma=args.sigma
+        spectra_align,
+        wl_align,
+        e_spectra,
+        corr=corr_lim,
+        use_flag=args.flag,
+        sigma=args.sigma,
     )
 
     if args.save:
@@ -194,7 +198,9 @@ def perform_align_gravity(args):
     xx = np.arange(len(computed_shift))
     yy = computed_shift_nm
     for i in range(len(ss)):
-        plt.text(xx[i], yy[i]+0.005, ss[i], fontsize=8, color="r", ha="center", va="center")
+        plt.text(
+            xx[i], yy[i] + 0.005, ss[i], fontsize=8, color="r", ha="center", va="center"
+        )
 
     plt.plot(
         np.arange(len(computed_shift)), computed_shift * 1e3,
@@ -238,8 +244,16 @@ def perform_align_gravity(args):
         print("[5] Overwrite _wave.fits (%2.2f s)" % (t5 - t4))
 
     fits.writeto(
-        "save_shift.fits",
-        np.array([computed_shift, n_spec * [computed_offset]]),
+        "save_shift_%s.fits" % (obs_ref),
+        np.array(
+            [
+                computed_shift,
+                n_spec * [computed_offset],
+                std_shift,
+                n_spec * [1e3 * std_shift.mean()],
+                n_spec * [std_shift_vel],
+            ]
+        ),
         overwrite=True,
     )
 
