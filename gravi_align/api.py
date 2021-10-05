@@ -243,6 +243,7 @@ def perform_align_gravity(args):
         t5 = time.time()
         print("[5] Overwrite _wave.fits (%2.2f s)" % (t5 - t4))
 
+    hdr = {"dir": os.getcwd(), "corr": args.corr}
     fits.writeto(
         "save_shift_%s.fits" % (obs_ref),
         np.array(
@@ -255,6 +256,7 @@ def perform_align_gravity(args):
             ]
         ),
         overwrite=True,
+        header=hdr,
     )
 
     wl_lim = [2.184, 0.003]
