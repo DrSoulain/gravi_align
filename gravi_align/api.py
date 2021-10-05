@@ -94,7 +94,7 @@ def load_data(args):
             % (choosen_index, len(l_file))
         )
 
-    return spectra, wl_align, spectra_align, e_spectra_align, sel_ref, obs_ref
+    return spectra, wl_align, spectra_align, e_spectra_align, sel_ref, obs_ref, filename
 
 
 def perform_align_gravity(args):
@@ -114,7 +114,11 @@ def perform_align_gravity(args):
         if not os.path.exists("fig_gravi_align/"):
             os.mkdir("fig_gravi_align")
 
-    spectra, wl_align, spectra_align, e_spectra, sel_ref, obs_ref = load_data(args)
+    spectra, wl_align, spectra_align, e_spectra, sel_ref, obs_ref, filename = load_data(
+        args
+    )
+
+    hdr = fits.open(filename)[0].header
 
     corr_lim = args.corr
     if args.full:
@@ -243,7 +247,9 @@ def perform_align_gravity(args):
         t5 = time.time()
         print("[5] Overwrite _wave.fits (%2.2f s)" % (t5 - t4))
 
-    hdr = {"dir": os.getcwd(), "corr": args.corr}
+    hdr["dir"] = os.getcwd()
+    hdr["corr"] = "%2.3f-%2.3f" % (args.corr[0], args.corr[1])
+    
     fits.writeto(
         "save_shift_%s.fits" % (obs_ref),
         np.array(
