@@ -88,6 +88,12 @@ def main(argv: Optional[List[str]] = None) -> int:
         default=2.166,
         help="Restframe to compute the uncertainty in km/s (default: %(default)s µm)",
     )
+    
+    run_parser.add_argument(
+        "--norm",
+        default=2.,
+        help="Normalization to compute the random noise.",
+    )
 
     run_parser.add_argument(
         "-m",

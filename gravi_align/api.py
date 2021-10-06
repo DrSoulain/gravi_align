@@ -191,7 +191,7 @@ def perform_align_gravity(args):
     std_shift_vel = (std_shift.mean() / args.restframe) * c_light / 1e3
 
     if args.noisy:
-        computed_shift = _compute_noisy_shift(computed_shift, std_shift)
+        computed_shift = _compute_noisy_shift(computed_shift, std_shift, args.norm)
 
     aver_shift_err = 1e3 * std_shift.mean()
 
