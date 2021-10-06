@@ -334,8 +334,9 @@ def check_align_gravity(args):
 
     try:
         filesave = "save_shift_%s_%s.fits" % (sel_ref, obs_ref)
-        computed_shift, computed_offset = fits.open(filesave)[0].data
-        computed_offset = computed_offset[0]
+        tab = fits.open(filesave)[0].data
+        computed_shift = tab[0]
+        computed_offset = tab[1][0]
     except FileNotFoundError:
         cprint("%s not found: do 'gravi_align run' first!" % filesave, "red")
         computed_shift = None
