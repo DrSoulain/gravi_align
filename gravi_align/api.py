@@ -326,7 +326,7 @@ def perform_align_gravity(args):
 def check_align_gravity(args):
     print(" -------- Check GRAVITY spectral alignment --------")
     wave, wavefile = find_wave(args)
-    spectra, wl_align, spectra_align, e_spectra, sel_ref, obs_ref = load_data(args)
+    spectra, wl_align, spectra_align, e_spectra, sel_ref, obs_ref, filename = load_data(args)
 
     if args.save:
         if not os.path.exists("fig_gravi_align/"):
