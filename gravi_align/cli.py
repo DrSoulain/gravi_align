@@ -89,6 +89,19 @@ def main(argv: Optional[List[str]] = None) -> int:
         help="Restframe to compute the uncertainty in km/s (default: %(default)s µm)",
     )
 
+    run_parser.add_argument(
+        "-m",
+        "--master",
+        action="store_true",
+        help="Use computed master shift computed on a good dataset sample.",
+    )
+    run_parser.add_argument(
+        "-n",
+        "--noisy",
+        action="store_true",
+        help="Add a gaussian random noise to the shift to study the impact of the errors on the observables.",
+    )
+
     check_parser = subparsers.add_parser(
         "check",
         help="Apply the save shift/offset (save_shift.fits) to check the alignment",

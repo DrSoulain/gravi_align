@@ -18,6 +18,18 @@ file_tellu = pkg_resources.resource_stream(
 tellu = np.loadtxt(file_tellu, skiprows=1)
 
 
+def _compute_noisy_shift(master_shift, master_uncer, norm=2.0):
+    """ Compute noisy shift using a normal law with the std corresponding to the
+    shift uncertainty divided by `norm` (by default 2)."""
+    noisy_shift = [
+        np.random.normal(master_shift[j], master_uncer[j] / norm, 1)
+        for j in range(len(master_shift))
+    ]
+
+    noisy_shift = np.squeeze(np.array(noisy_shift))
+    return noisy_shift
+
+
 def open_spectrum_file(file, nint=25):
     file_raw = file.split("aligned.fits")[0] + ".fits"
 
@@ -437,7 +449,7 @@ def compute_corr_map(
         cond_BrG = (boxed_wave >= brg[0]) & (boxed_wave <= brg[1])
     else:
         cond_BrG = boxed_wave < 0
-    
+
     ref_spectrum_sel = ref_spectrum[~cond_BrG]
     size_spectr_norm = ref_spectrum_sel.shape[0]
     n_corr = (size_spectr_norm * 2) - 1

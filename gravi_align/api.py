@@ -3,13 +3,13 @@ import time
 import os
 
 from matplotlib import pyplot as plt
-from scipy.constants.codata import parse_constants_2002to2014
 from gravi_align.plotting import (
     plot_corr_map,
     plot_raw_spectra,
     plot_tellu_fit,
 )
 from gravi_align.core import (
+    _compute_noisy_shift,
     apply_shift_fourier,
     compute_corr_map,
     compute_sel_spectra,
@@ -22,6 +22,7 @@ from astropy.io import fits
 import numpy as np
 from termcolor import cprint
 from scipy.constants import c as c_light
+import pkg_resources
 
 
 def find_wave(args):
@@ -176,10 +177,21 @@ def perform_align_gravity(args):
         plt.savefig("fig_gravi_align/corr_map_%s_%s.png" % (sel_ref, obs_ref))
 
     pixel_lambda_nm = pixel_lambda * 1000
-    computed_shift = pixel_lambda * new_shift[i_fit]
-    std_shift = pixel_lambda * new_shift[4]
+
+    if args.master:
+        f_master_w = "internal_data/master_shift_weighted.txt"
+        m_shift = np.loadtxt(pkg_resources.resource_stream("gravi_align", f_master_w))
+
+        computed_shift = m_shift[0] / 1000.0
+        std_shift = m_shift[1] / 1000.0
+    else:
+        computed_shift = pixel_lambda * new_shift[i_fit]
+        std_shift = pixel_lambda * new_shift[4]
 
     std_shift_vel = (std_shift.mean() / args.restframe) * c_light / 1e3
+
+    if args.noisy:
+        computed_shift = _compute_noisy_shift(computed_shift, std_shift)
 
     aver_shift_err = 1e3 * std_shift.mean()
 
