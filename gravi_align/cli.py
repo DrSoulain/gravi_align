@@ -168,6 +168,12 @@ def main(argv: Optional[List[str]] = None) -> int:
         default="reduced/",
         help="Data directory to find .sof files (default: %(default)s)",
     )
+    run_parser.add_argument(
+        "--iwave",
+        default=None,
+        type=int,
+        help="If multiple _wave are found, you can choose one by its index (default: %(default)s)",
+    )
 
     clean_parser = subparsers.add_parser(
         "clean", help="Clean the reduced/ dir and keep only calibration files",

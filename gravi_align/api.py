@@ -409,14 +409,20 @@ def _check_p2vm_modified(p2vm_sof):
 
 def compute_p2vm(args):
     l_calib_wave_file = glob(os.path.join(args.datadir, "*_wave.fits"))
+    l_backup = glob(os.path.join(args.datadir, "*_backup.fits"))
+    if len(l_backup) == 1:
+        file_backup = l_backup[0]
     if len(l_calib_wave_file) > 1:
         if args.iwave is None:
             print("Warning: multiple _wave found, you have to specify an index number.")
             d = []
             headers = ["FILENAME", "INDEX"]
+            filename = l_calib_wave_file[i]
             for i in range(len(l_calib_wave_file)):
-                d.append([l_calib_wave_file[i], i])
+                d.append([filename, i])
             print(tabulate(d, headers=headers))
+            if file_backup.split("_backup")[0] in filename:
+                print("Backup file detected, you should use %i file" % i)
             iwave = int(input("Which _wave should I use?\n"))
         else:
             iwave = int(args.iwave)
