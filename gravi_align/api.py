@@ -45,7 +45,8 @@ def find_wave(args):
                 iwave = int(input("Which _wave should I use?\n"))
             else:
                 iwave = int(args.iwave)
-
+        else:
+            iwave = 0
         calib_wave_file = l_calib_wave_file[iwave]
     except IndexError:
         raise IndexError("*_wave.fits not found in %s/." % args.datadir)
