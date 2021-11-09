@@ -89,10 +89,16 @@ def main(argv: Optional[List[str]] = None) -> int:
         type=float,
         help="Restframe to compute the uncertainty in km/s (default: %(default)s µm)",
     )
-    
+    run_parser.add_argument(
+        "--iwave",
+        default=None,
+        type=int,
+        help="If multiple _wave are found, you can choose one by its index (default: %(default)s)",
+    )
+
     run_parser.add_argument(
         "--norm",
-        default=2.,
+        default=2.0,
         type=float,
         help="Normalization to compute the random noise.",
     )

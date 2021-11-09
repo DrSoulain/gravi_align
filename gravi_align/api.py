@@ -23,6 +23,7 @@ import numpy as np
 from termcolor import cprint
 from scipy.constants import c as c_light
 import pkg_resources
+from tabulate import tabulate
 
 
 def find_wave(args):
@@ -30,7 +31,22 @@ def find_wave(args):
         raise IOError("Datadir %s not found, check --datadir argument." % args.datadir)
 
     try:
-        calib_wave_file = glob("%s*_wave.fits" % (args.datadir))[0]
+        l_calib_wave_file = glob(os.path.join(args.datadir, "*_wave.fits"))
+        if len(l_calib_wave_file) > 1:
+            if args.iwave is None:
+                print(
+                    "Warning: multiple _wave found, you have to specify an index number."
+                )
+                d = []
+                headers = ["FILENAME", "INDEX"]
+                for i in range(len(l_calib_wave_file)):
+                    d.append([l_calib_wave_file[i], i])
+                print(tabulate(d, headers=headers))
+                iwave = int(input("Which _wave should I use?\n"))
+            else:
+                iwave = int(args.iwave)
+
+        calib_wave_file = l_calib_wave_file[iwave]
     except IndexError:
         raise IndexError("*_wave.fits not found in %s/." % args.datadir)
 
