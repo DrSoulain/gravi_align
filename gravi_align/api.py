@@ -423,14 +423,20 @@ def compute_p2vm(args):
 
     if len(l_calib_wave_file) > 1:
         if args.iwave is None:
-            print("Warning: multiple _wave found, you have to specify an index number.")
+            cprint(
+                "Warning: multiple _wave found, you have to specify an index number.\n",
+                "green",
+            )
             d = []
             headers = ["FILENAME", "INDEX"]
             for i in range(len(l_calib_wave_file)):
                 filename = l_calib_wave_file[i]
                 d.append([filename, i])
                 if file_backup.split("_backup")[0] in filename:
-                    print("Backup file detected, you should use %i file" % i)
+                    cprint(
+                        "-> Backup file detected, you should use file # %i\n" % i,
+                        "cyan",
+                    )
             print(tabulate(d, headers=headers))
             iwave = int(input("Which _wave should I use?\n"))
         else:
