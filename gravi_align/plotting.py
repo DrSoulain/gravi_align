@@ -195,7 +195,6 @@ def plot_raw_spectra(
             cond_wl = (wl_fixed >= wl_lim[0] - wl_lim[1]) & (
                 wl_fixed <= wl_lim[0] + wl_lim[1]
             )
-        print(len(cond_wl), len(wl_fixed))
         plt.plot(wl_fixed[cond_wl], spec[cond_wl])
     if args is not None:
         plt.xlim(args.corr[0], args.corr[1])

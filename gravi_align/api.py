@@ -27,10 +27,10 @@ import pkg_resources
 
 def find_wave(args):
     if not os.path.exists(args.datadir):
-        raise IOError("Datadir %s/ not found, check --datadir argument." % args.datadir)
+        raise IOError("Datadir %s not found, check --datadir argument." % args.datadir)
 
     try:
-        calib_wave_file = glob("%s/*_wave.fits" % (args.datadir))[0]
+        calib_wave_file = glob("%s*_wave.fits" % (args.datadir))[0]
     except IndexError:
         raise IndexError("*_wave.fits not found in %s/." % args.datadir)
 
@@ -65,6 +65,7 @@ def load_data(args):
         target = hdu[0].header["OBJECT"]
         date = hdu[0].header["DATE-OBS"]
         sci = hdu[0].header["HIERARCH ESO PRO SCIENCE"]
+        hdu.close()
         if not sci:
             l_cal.append(i)
         if not args.default:
@@ -111,6 +112,7 @@ def perform_align_gravity(args):
     start_time = time.time()
 
     wave, wavefile = find_wave(args)
+    print(wave.shape, wavefile)
 
     if ("_backup" in wavefile) & (not args.force):
         print(
@@ -326,7 +328,9 @@ def perform_align_gravity(args):
 def check_align_gravity(args):
     print(" -------- Check GRAVITY spectral alignment --------")
     wave, wavefile = find_wave(args)
-    spectra, wl_align, spectra_align, e_spectra, sel_ref, obs_ref, filename = load_data(args)
+    spectra, wl_align, spectra_align, e_spectra, sel_ref, obs_ref, filename = load_data(
+        args
+    )
 
     if args.save:
         if not os.path.exists("fig_gravi_align/"):
