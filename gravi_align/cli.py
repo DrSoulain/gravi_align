@@ -168,7 +168,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         default="reduced/",
         help="Data directory to find .sof files (default: %(default)s)",
     )
-    run_parser.add_argument(
+    p2vm_parser.add_argument(
         "--iwave",
         default=None,
         type=int,
