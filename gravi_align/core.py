@@ -148,7 +148,10 @@ def compute_shift(corr_map, size=5):
         g_init = models.Gaussian1D(amplitude=y_to_fit.max(), mean=1, stddev=1.0)
         g = fitter_gauss(g_init, x_to_fit, y_to_fit)
         l_shift_corr[i_fit] = g.mean.value
-        cov_diag = np.diag(fitter_gauss.fit_info["param_cov"])
+        try:
+            cov_diag = np.diag(fitter_gauss.fit_info["param_cov"])
+        except ValueError:
+            cov_diag = [np.nan, np.nan]
         l_shift_std[i_fit] = np.sqrt(cov_diag[1])
 
     x_fitted = pos_wl0 + l_shift_corr
