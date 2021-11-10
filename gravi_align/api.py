@@ -462,7 +462,7 @@ def compute_p2vm(args):
         if args.old:
             old_str = " --bias-method=MEDIAN_PER_COLUMN"
         os.system(
-            "esorex --log-file=new_p2vm_%s.log --output-dir=%s gravity_p2vm %s%s"
+            "esorex --log-file=new_p2vm_%s.log --output-dir=%s%s gravity_p2vm %s"
             % (log_file_name, args.datadir, sof_file_name, old_str)
         )
 
