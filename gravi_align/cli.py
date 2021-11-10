@@ -174,6 +174,11 @@ def main(argv: Optional[List[str]] = None) -> int:
         type=int,
         help="If multiple _wave are found, you can choose one by its index (default: %(default)s)",
     )
+    p2vm_parser.add_argument(
+        "--old",
+        action="store_true",
+        help="If old data (< 2017), coompute the dark using the appropriate bias method (default: %(default)s)",
+    )
 
     clean_parser = subparsers.add_parser(
         "clean", help="Clean the reduced/ dir and keep only calibration files",

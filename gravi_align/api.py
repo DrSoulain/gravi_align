@@ -458,9 +458,12 @@ def compute_p2vm(args):
         new_line = np.array([calib_wave_file, "WAVE"], dtype=str)
         new_p2vm = np.array(np.vstack([p2vm_sof, new_line]), dtype=str)
         np.savetxt(sof_file_name, new_p2vm, fmt="%s")
+        old_str = ""
+        if args.old:
+            old_str = " --bias-method=MEDIAN_PER_COLUMN"
         os.system(
-            "esorex --log-file=new_p2vm_%s.log --output-dir=%s gravity_p2vm %s"
-            % (log_file_name, args.datadir, sof_file_name)
+            "esorex --log-file=new_p2vm_%s.log --output-dir=%s gravity_p2vm %s%s"
+            % (log_file_name, args.datadir, sof_file_name, old_str)
         )
 
     return 0
