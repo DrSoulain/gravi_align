@@ -22,7 +22,11 @@ def plot_tellu(label=None, plot_ind=False, val=5000):
 
 
 def plot_corr_map(
-    corr_map, fit=None, polyn_model=None, window=25, save=False, figname=None, args=None,
+    corr_map,
+    fit=None,
+    polyn_model=None,
+    window=25,
+    args=None,
 ):
     """ Plot the correlation map with the detected offset and
     the polynomial fit. You can limit the region of interest
@@ -39,8 +43,7 @@ def plot_corr_map(
     sns.set_context("poster", font_scale=0.9)
     fig = plt.figure(figsize=(14, 9))
     ax = plt.gca()
-    ax.set_title("-- Correlation map --")  # , fontsize=16)
-    # plt.title('%s - %s - with p2vm %i' % (target, date_obs, p2vm))
+    ax.set_title("-- Correlation map --")
     c = plt.imshow(corr_map, cmap="gist_earth", aspect="auto", zorder=1)
     plt.grid("False")
     if fit is not None:
@@ -49,30 +52,18 @@ def plot_corr_map(
             plt.text(fit[0][i], fit[1][i], s=fit[2][i], color="#fff600", fontsize=9)
     if polyn_model is not None:
         plt.plot(
-            polyn_model[0],
-            polyn_model[1],
-            "w",
-            ls="-",
-            lw=1,
-            label="Polynomial fit",  # (%2.1e, %2.1e, %2.1e)"
-            # % (polyn_model[2][0], polyn_model[2][1], polyn_model[2][2],),
+            polyn_model[0], polyn_model[1], "w", ls="-", lw=1, label="Polynomial fit",
         )
     for x in noshift:
-        plt.text(5, x, "FLAGGED", color='r', ha='center', va='center')
-        
+        plt.text(6.5, x, "FLAGGED", color="#ff1a1a", ha="center", va="center", fontsize=11)
     plt.legend(facecolor="None", labelcolor="w")
     plt.xlim(pos_wl0 - window // 2, pos_wl0 + window // 2)
     plt.ylim(23.5, -0.5)
-    plt.xlabel("Wavelength [pix]")  # , fontsize=12)
-    plt.ylabel("Spectrum numbers (on detector)")  # , fontsize=12)
+    plt.xlabel("Wavelength [pix]")
+    plt.ylabel("Spectrum numbers (on detector)")
     cbar = plt.colorbar(c, ax=ax)
-    cbar.set_label("Correlation")  # , fontsize=12)
+    cbar.set_label("Correlation")
     plt.tight_layout()
-
-    if save:
-        if figname is None:
-            figname = "correlation_map.pdf"
-            plt.savefig(figname)
     return fig
 
 

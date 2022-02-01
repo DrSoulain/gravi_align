@@ -191,7 +191,7 @@ def perform_align_gravity(args):
     )
     new_shift = compute_shift(corr_map)
 
-    plot_corr_map(corr_map, new_shift[1], new_shift[2])
+    plot_corr_map(corr_map, new_shift[1], new_shift[2], args=args)
     if args.save:
         plt.savefig("fig_gravi_align/corr_map_%s_%s.png" % (sel_ref, obs_ref))
 
@@ -200,7 +200,6 @@ def perform_align_gravity(args):
     if args.master:
         f_master_w = "internal_data/master_shift_weighted.txt"
         m_shift = np.loadtxt(pkg_resources.resource_stream("gravi_align", f_master_w))
-
         computed_shift = m_shift[0] / 1000.0
         std_shift = m_shift[1] / 1000.0
     else:
