@@ -216,12 +216,14 @@ def perform_align_gravity(args):
     if len(no_shifted_spectrum) >= 1:
         for x in no_shifted_spectrum:
             if x == 0:
-                computed_shift[x] = computed_shift[x+1]
+                computed_shift[x] = computed_shift[x + 1]
             elif x == len(computed_shift) - 1:
-                computed_shift[x] = computed_shift[x-1]
+                computed_shift[x] = computed_shift[x - 1]
             else:
-                computed_shift[x] = (computed_shift[x-1] + computed_shift[x+1])/2.
-        
+                computed_shift[x] = (
+                    computed_shift[x - 1] + computed_shift[x + 1]
+                ) / 2.0
+
     aver_shift_err = 1e3 * std_shift.mean()
 
     computed_shift_nm = computed_shift * 1e3
@@ -251,8 +253,18 @@ def perform_align_gravity(args):
     xx = np.arange(len(computed_shift))
     yy = computed_shift_nm
     for i in range(len(ss)):
+        if i in args.noshift:
+            color = "red"
+        else:
+            color = "green"
         plt.text(
-            xx[i], yy[i] + 0.005, ss[i], fontsize=8, color="r", ha="center", va="center"
+            xx[i],
+            yy[i] + 0.005,
+            ss[i],
+            fontsize=8,
+            color=color,
+            ha="center",
+            va="center",
         )
 
     plt.plot(
@@ -266,7 +278,7 @@ def perform_align_gravity(args):
         label="Mean fit uncertainty = %2.3f nm" % (1e3 * std_shift.mean()),
     )
 
-    plt.legend(loc='best')
+    plt.legend(loc="best")
     plt.xlabel("# Spectrum")
     plt.ylabel("Spectral shift [nm]")
     # plt.grid(alpha=0.2)

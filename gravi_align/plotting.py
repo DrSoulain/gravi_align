@@ -3,6 +3,7 @@ from matplotlib import pyplot as plt
 import pkg_resources
 
 from gravi_align.core import _substract_run_med
+import seaborn as sns
 
 # Plotting function
 # ==============================================================================
@@ -15,13 +16,13 @@ def plot_tellu(label=None, plot_ind=False, val=5000):
     tellu = np.loadtxt(file_tellu, skiprows=1)
     plt.axvline(np.nan, lw=0.5, c="crimson", alpha=0.5, label=label)
     for i in range(len(tellu)):
-        plt.axvline(tellu[i], lw=0.5, c="crimson", alpha=0.5)
+        plt.axvline(tellu[i], lw=1, c="crimson", alpha=0.5)
         if plot_ind:
             plt.text(tellu[i], val, i, fontsize=7, c="crimson")
 
 
 def plot_corr_map(
-    corr_map, fit=None, polyn_model=None, window=25, save=False, figname=None
+    corr_map, fit=None, polyn_model=None, window=25, save=False, figname=None, args=None,
 ):
     """ Plot the correlation map with the detected offset and
     the polynomial fit. You can limit the region of interest
@@ -30,11 +31,18 @@ def plot_corr_map(
     n_channel = corr_map.shape[1]
     pos_wl0 = n_channel // 2
 
+    if args is None:
+        noshift = []
+    else:
+        noshift = args.noshift
+    sns.set_theme(color_codes=True)
+    sns.set_context("poster", font_scale=0.9)
     fig = plt.figure(figsize=(14, 9))
     ax = plt.gca()
-    ax.set_title("-- Correlation map --", fontsize=16)
+    ax.set_title("-- Correlation map --")  # , fontsize=16)
     # plt.title('%s - %s - with p2vm %i' % (target, date_obs, p2vm))
-    c = plt.imshow(corr_map, cmap="gist_earth", aspect="auto")
+    c = plt.imshow(corr_map, cmap="gist_earth", aspect="auto", zorder=1)
+    plt.grid("False")
     if fit is not None:
         plt.plot(fit[0], fit[1], "x", color="#fff600", label="Gaussian fit positions")
         for i in range(n_spec):
@@ -46,16 +54,19 @@ def plot_corr_map(
             "w",
             ls="-",
             lw=1,
-            label="Polynomial fit (%2.1e, %2.1e, %2.1e)"
-            % (polyn_model[2][0], polyn_model[2][1], polyn_model[2][2],),
+            label="Polynomial fit",  # (%2.1e, %2.1e, %2.1e)"
+            # % (polyn_model[2][0], polyn_model[2][1], polyn_model[2][2],),
         )
-    plt.legend(fontsize=12, facecolor="None", labelcolor="w")
+    for x in noshift:
+        plt.text(5, x, "FLAGGED", color='r', ha='center', va='center')
+        
+    plt.legend(facecolor="None", labelcolor="w")
     plt.xlim(pos_wl0 - window // 2, pos_wl0 + window // 2)
     plt.ylim(23.5, -0.5)
-    plt.xlabel("Wavelength [pix]", fontsize=12)
-    plt.ylabel("Spectrum numbers (on detector)", fontsize=12)
+    plt.xlabel("Wavelength [pix]")  # , fontsize=12)
+    plt.ylabel("Spectrum numbers (on detector)")  # , fontsize=12)
     cbar = plt.colorbar(c, ax=ax)
-    cbar.set_label("Correlation", fontsize=12)
+    cbar.set_label("Correlation")  # , fontsize=12)
     plt.tight_layout()
 
     if save:
@@ -124,6 +135,8 @@ def plot_tellu_fit(res, lim_chi2=10):
     l_chi2 = res["l_chi2"]
     lines = res["lines"]
 
+    sns.set_context("talk", font_scale=0.9)
+
     fig = plt.figure(figsize=[12, 6])
     fig.suptitle(
         r"Fit tellurics around Br$\gamma$ - offset=%2.3fnm" % (res["offset"] * 1000.0),
@@ -162,6 +175,8 @@ def plot_tellu_fit(res, lim_chi2=10):
         if chi2 > lim_chi2:
             plt.plot(tellu_wl0, 0.5, "rx", ms=20)
         plt.legend(fontsize=5)
+        if ((i + 1) == 5) or ((i + 1) == 6):
+            plt.xlabel("Wavelength [nm]")
     plt.tight_layout()
     return fig
 
