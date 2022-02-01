@@ -34,6 +34,13 @@ def main(argv: Optional[List[str]] = None) -> int:
         help="Use flag to reject data point with sigma-clipping.",
     )
     run_parser.add_argument(
+        "--noshift",
+        nargs="+",
+        default=[],
+        type=int,
+        help="Index of spectrum where the shift is computed using the closest shift available (if bad pixel).",
+    )
+    run_parser.add_argument(
         "--full",
         action="store_true",
         help="Compute the correlation map using large wavelength range (2.1-2.2). "
