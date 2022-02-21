@@ -22,11 +22,7 @@ def plot_tellu(label=None, plot_ind=False, val=5000):
 
 
 def plot_corr_map(
-    corr_map,
-    fit=None,
-    polyn_model=None,
-    window=25,
-    args=None,
+    corr_map, fit=None, polyn_model=None, window=25, args=None,
 ):
     """ Plot the correlation map with the detected offset and
     the polynomial fit. You can limit the region of interest
@@ -55,7 +51,9 @@ def plot_corr_map(
             polyn_model[0], polyn_model[1], "w", ls="-", lw=1, label="Polynomial fit",
         )
     for x in noshift:
-        plt.text(6.5, x, "FLAGGED", color="#ff1a1a", ha="center", va="center", fontsize=11)
+        plt.text(
+            6.5, x, "FLAGGED", color="#ff1a1a", ha="center", va="center", fontsize=11
+        )
     plt.legend(facecolor="None", labelcolor="w")
     plt.xlim(pos_wl0 - window // 2, pos_wl0 + window // 2)
     plt.ylim(23.5, -0.5)
@@ -182,10 +180,12 @@ def plot_raw_spectra(
     args=None,
 ):
     """ """
+    sns.set_theme(color_codes=True)
+    sns.set_context("poster", font_scale=0.9)
     n_spec = spectra.shape[0]
 
     fig = plt.figure(figsize=[9, 6])
-    plt.title(title, fontsize=16)
+    plt.title(title)
     for i in range(n_spec):
         spec, wave, err = _substract_run_med(spectra[i], wave_cal[i])
         if shift is None:
@@ -209,5 +209,5 @@ def plot_raw_spectra(
     plot_tellu()
     plt.xlabel(r"Wavelength [$\mu$m]")
     plt.ylabel("Normalized flux [counts]")
-    plt.tight_layout()
+    plt.subplots_adjust(bottom=0.15, right=0.98, left=0.19, top=0.93)
     return fig

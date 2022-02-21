@@ -97,6 +97,12 @@ def main(argv: Optional[List[str]] = None) -> int:
         help="Restframe to compute the uncertainty in km/s (default: %(default)s µm)",
     )
     run_parser.add_argument(
+        "--wl_tellu",
+        default=2.1855,
+        type=float,
+        help="Wavelength of the telluric to compute the dispersion km/s (default: %(default)s µm)",
+    )
+    run_parser.add_argument(
         "--iwave",
         default=None,
         type=int,

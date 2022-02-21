@@ -9,8 +9,10 @@ from astropy.modeling import fitting, models
 from matplotlib import pyplot as plt
 from scipy.ndimage import shift
 from scipy.signal import correlate
-from termcolor import cprint
+from termcolor import cprint, colored
 from tsmoothie.smoother import ConvolutionSmoother
+import seaborn as sns
+from scipy.constants import c as c_light
 
 file_tellu = pkg_resources.resource_stream(
     "gravi_align", "internal_data/Telluric_lines.txt"
@@ -470,3 +472,98 @@ def compute_corr_map(
         l_spec_sub.append(spec_to_compare[~cond_BrG])
 
     return corr_map
+
+
+def get_dispersion_spectra(
+    wave,
+    spectra,
+    shift=None,
+    tellu_offset=0,
+    wl_line=2.1848,
+    width_line=0.0012,
+    speed=150,
+    ignore=None,
+    title="",
+    verbose=False,
+):
+    """ Compute the dispersion between spectra around a telluric line. """
+    fitter_gauss = fitting.LevMarLSQFitter()
+
+    if ignore is None:
+        ignore = []
+    n_spec = spectra.shape[0]
+    sns.set_theme(color_codes=True)
+    sns.set_context("poster", font_scale=0.9)
+    plt.figure(figsize=(12, 8))
+    l_mean = []
+    for i in range(n_spec):
+        spec, wavei, err = _substract_run_med(spectra[i], wave[i])
+        if shift is None:
+            tmp_shift = 0
+        else:
+            tmp_shift = shift[i]
+        wl_fixed = wavei * 1e6 + tmp_shift - tellu_offset
+        cond_wl = (wl_fixed >= wl_line - width_line) & (
+            wl_fixed <= wl_line + width_line
+        )
+        x = ((wl_fixed[cond_wl] - wl_line) / wl_line) * c_light / 1e3
+        y_to_fit = -spec[cond_wl]
+        x_to_fit = x
+        e_y_fit = abs(y_to_fit * 0.1)
+
+        g_init = models.Gaussian1D(amplitude=y_to_fit.max(), mean=0, stddev=50)
+        g = fitter_gauss(g_init, x_to_fit, y_to_fit)
+
+        x_model = np.linspace(x_to_fit[0], x_to_fit[-1], 100)
+        y_model = g(x_model)
+
+        if i not in ignore:
+            l_mean.append(g.mean.value)
+
+        ax = plt.subplot(6, 4, i + 1)
+        if i in ignore:
+            plt.plot(0.5, 0.5, "rx", ms=50, transform=ax.transAxes, zorder=10)
+        plt.errorbar(x_to_fit, y_to_fit, yerr=e_y_fit, marker=".", ls="None")
+        plt.plot(x_model, y_model, color="#e29750")
+        plt.xlim(-speed, speed)
+        if i >= 20:
+            plt.xlabel("Wavelength [km/s]")
+        props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
+        plt.text(
+            0.05,
+            0.8,
+            "m=%2.2f km/s" % g.mean.value,
+            transform=ax.transAxes,
+            fontsize=11,
+            verticalalignment="top",
+            bbox=props,
+        )
+        plt.yticks([])
+
+    l_mean = np.array(l_mean)
+    plt.suptitle("%s STD = %2.2f km/s" % (title, l_mean.std()))
+    plt.subplots_adjust(
+        left=0.02, right=0.98, top=0.93, bottom=0.11, wspace=0.02, hspace=0.02,
+    )
+
+    std_mean = l_mean.std()
+    std_mean_nm = (std_mean * 1e3 / c_light) * wl_line * 1000.0
+
+    suspicious_spectra = np.where((l_mean - l_mean.mean()) > 3 * std_mean)[0]
+    if len(suspicious_spectra) >= 1:
+        for i in suspicious_spectra:
+            sigma_mean = (l_mean[i] - l_mean.mean()) / std_mean
+            cprint(
+                "Spectrum %i appears to be far from the mean (%2.1f sigma)."
+                % (i, sigma_mean),
+                "green",
+            )
+        print(
+            colored("You should ignore it (use of --noshift, see gravi_align run -h)", "green"),
+        )
+    if verbose:
+        print(
+            "Dispersion around the telluric (%2.3f µm) = %2.3f km/s (%2.3f nm)"
+            % (wl_line, std_mean, std_mean_nm)
+        )
+    return std_mean, std_mean_nm

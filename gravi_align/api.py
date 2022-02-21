@@ -15,12 +15,13 @@ from gravi_align.core import (
     compute_sel_spectra,
     compute_shift,
     fit_tellu_offset,
+    get_dispersion_spectra,
     open_spectrum_file,
     write_wave,
 )
 from astropy.io import fits
 import numpy as np
-from termcolor import cprint
+from termcolor import cprint, colored
 from scipy.constants import c as c_light
 import pkg_resources
 from tabulate import tabulate
@@ -129,7 +130,6 @@ def perform_align_gravity(args):
     start_time = time.time()
 
     wave, wavefile = find_wave(args)
-    print(wave.shape, wavefile)
 
     if ("_backup" in wavefile) & (not args.force):
         print(
@@ -145,6 +145,17 @@ def perform_align_gravity(args):
     spectra, wl_align, spectra_align, e_spectra, sel_ref, obs_ref, filename = load_data(
         args
     )
+
+    wl_line = args.wl_tellu
+    title_raw = "Raw telluric (%2.3f µm)" % wl_line
+
+    std_tellu_raw = get_dispersion_spectra(
+        wave, spectra, wl_line=wl_line, title=title_raw
+    )[0]
+    if args.save:
+        plt.savefig(
+            "fig_gravi_align/raw_telluric_fit_%s_%s.png" % (sel_ref, obs_ref), dpi=300
+        )
 
     hdr = fits.open(filename)[0].header
 
@@ -349,11 +360,42 @@ def perform_align_gravity(args):
         title="Aligned spectra - %s %s" % (sel_ref, obs_ref),
         args=args,
     )
+
     if args.save:
         plt.savefig(
             "fig_gravi_align/aligned_spectra_%s_%s.png" % (sel_ref, obs_ref), dpi=300
         )
 
+    wl_line = args.wl_tellu
+    title_aligned = "Aligned telluric (%2.3f µm)" % wl_line
+
+    std_tellu_align = get_dispersion_spectra(
+        wave,
+        spectra,
+        shift=computed_shift,
+        tellu_offset=computed_offset,
+        wl_line=wl_line - computed_offset,
+        title=title_aligned,
+    )[0]
+    if args.save:
+        plt.savefig(
+            "fig_gravi_align/aligned_telluric_fit_%s_%s.png" % (sel_ref, obs_ref),
+            dpi=300,
+        )
+
+    ratio_disp = std_tellu_raw / std_tellu_align
+    
+    if ratio_disp > 3:
+        color_ratio = "green"
+    elif (ratio_disp > 1) & (ratio_disp <= 3):
+        color_ratio = "yellow"
+    else:
+        color_ratio = "red"
+    print(
+        "Dispersion go from %2.3f to %2.3f km/s"
+        % (std_tellu_raw, std_tellu_align),
+        colored("(ratio = %2.1f)" % ratio_disp, color_ratio)
+    )
     print(
         " -------- Spectral alignment done (%2.2f s) -------- \n"
         % (time.time() - start_time)
