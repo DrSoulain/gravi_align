@@ -150,7 +150,7 @@ def perform_align_gravity(args):
     title_raw = "Raw telluric (%2.3f µm)" % wl_line
 
     std_tellu_raw = get_dispersion_spectra(
-        wave, spectra, wl_line=wl_line, title=title_raw
+        wave, spectra, wl_line=wl_line, title=title_raw, ignore=args.noshift,
     )[0]
     if args.save:
         plt.savefig(
