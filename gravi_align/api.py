@@ -309,7 +309,7 @@ def perform_align_gravity(args):
 
     plot_tellu_fit(res, lim_chi2=4)
     if args.save:
-        plt.savefig("fig_gravi_align/fit_tellu_%s_%s.png" % (sel_ref, obs_ref))
+        plt.savefig("fig_gravi_align/fit_tellu_%s_%s.png" % (sel_ref, obs_ref), dpi=300)
 
     if args.write:
         write_wave(
@@ -376,6 +376,7 @@ def perform_align_gravity(args):
         tellu_offset=computed_offset,
         wl_line=wl_line - computed_offset,
         title=title_aligned,
+        ignore=args.noshift,
     )[0]
     if args.save:
         plt.savefig(
